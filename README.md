@@ -7,7 +7,7 @@
 source /opt/ros/${ROS_DISTRO}/setup.bash
 sudo apt update
 # Install Python tools
-sudo apt install -y python3-vcstool python3-colcon-common-extensions
+sudo apt install -y python3-vcstool python3-colcon-common-extensions python3-colcon-clean
 # Install format tools
 sudo apt-get install clang-format
 pip install pre-commit
