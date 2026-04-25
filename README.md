@@ -7,9 +7,8 @@
 source /opt/ros/${ROS_DISTRO}/setup.bash
 sudo apt update
 # Install Python tools
-sudo apt install -y python3-vcstool python3-colcon-common-extensions python3-colcon-clean
+sudo apt install -y python3-vcstool python3-colcon-common-extensions python3-colcon-clean gdb clang-format
 # Install format tools
-sudo apt-get install clang-format
 pip install pre-commit
 # Create workspace
 mkdir -p ~/ros2/aerial_robot_base_ws/src
