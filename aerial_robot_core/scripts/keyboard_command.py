@@ -46,20 +46,20 @@ def printMsg(msg_str, msg_len=50):
 
 class KeyboardCommandNode(Node):
     def __init__(self):
-        super().__init__('keyboard_command')
+        super().__init__("keyboard_command")
         self.declare_parameter("robot_ns", "")
         self.robot_ns = self.get_parameter("robot_ns").value
         if not self.robot_ns:
             self.robot_ns = ""
 
         ns = self.robot_ns + "/teleop_command"
-        self.land_pub = self.create_publisher(Empty, ns + '/land', 1)
-        self.halt_pub = self.create_publisher(Empty, ns + '/halt', 1)
-        self.start_pub = self.create_publisher(Empty, ns + '/start', 1)
-        self.takeoff_pub = self.create_publisher(Empty, ns + '/takeoff', 1)
-        self.force_landing_pub = self.create_publisher(Empty, ns + '/force_landing', 1)
-        self.nav_pub = self.create_publisher(FlightNav, self.robot_ns + '/uav/nav', 1)
-        self.motion_start_pub = self.create_publisher(Empty, 'task_start', 1)
+        self.land_pub = self.create_publisher(Empty, ns + "/land", 1)
+        self.halt_pub = self.create_publisher(Empty, ns + "/halt", 1)
+        self.start_pub = self.create_publisher(Empty, ns + "/start", 1)
+        self.takeoff_pub = self.create_publisher(Empty, ns + "/takeoff", 1)
+        self.force_landing_pub = self.create_publisher(Empty, ns + "/force_landing", 1)
+        self.nav_pub = self.create_publisher(FlightNav, self.robot_ns + "/uav/nav", 1)
+        self.motion_start_pub = self.create_publisher(Empty, "task_start", 1)
 
         self.declare_parameter("xy_vel", 0.2)
         self.declare_parameter("z_vel", 0.2)
@@ -79,65 +79,65 @@ class KeyboardCommandNode(Node):
             key = getKey()
             output = ""
 
-            if key == 'l':
+            if key == "l":
                 self.land_pub.publish(Empty())
-                output = "send land command"
-            elif key == 'r':
+                output = "sent land command"
+            elif key == "r":
                 self.start_pub.publish(Empty())
-                output = "send motor-arming command"
-            elif key == 'h':
+                output = "sent motor-arming command"
+            elif key == "h":
                 self.halt_pub.publish(Empty())
-                output = "send motor-disarming (halt) command"
-            elif key == 'f':
+                output = "sent motor-disarming (halt) command"
+            elif key == "f":
                 self.force_landing_pub.publish(Empty())
-                output = "send force landing command"
-            elif key == 't':
+                output = "sent force landing command"
+            elif key == "t":
                 self.takeoff_pub.publish(Empty())
-                output = "send takeoff command"
-            elif key == 'x':
+                output = "sent takeoff command"
+            elif key == "x":
                 self.motion_start_pub.publish(Empty())
-                output = "send task-start command"
-            elif key == 'w':
+                output = "sent task-start command"
+            elif key == "w":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_x = self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send +x vel command"
-            elif key == 's':
+                output = "sent +x vel command"
+            elif key == "s":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_x = -self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send -x vel command"
-            elif key == 'a':
+                output = "sent -x vel command"
+            elif key == "a":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_y = self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send +y vel command"
-            elif key == 'd':
+                output = "sent +y vel command"
+            elif key == "d":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_y = -self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send -y vel command"
-            elif key == 'q':
+                output = "sent -y vel command"
+            elif key == "q":
                 nav_msg.yaw_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_omega_z = self.yaw_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send +yaw vel command"
-            elif key == 'e':
+                output = "sent +yaw vel command"
+            elif key == "e":
                 nav_msg.yaw_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_omega_z = -self.yaw_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send -yaw vel command"
-            elif key == '[':
+                output = "sent -yaw vel command"
+            elif key == "[":
                 nav_msg.pos_z_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_z = self.z_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send +z vel command"
-            elif key == ']':
+                output = "sent +z vel command"
+            elif key == "]":
                 nav_msg.pos_z_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_z = -self.z_vel
                 self.nav_pub.publish(nav_msg)
-                output = "send -z vel command"
-            elif key == '\x03':  # Ctrl+C
+                output = "sent -z vel command"
+            elif key == "\x03":  # Ctrl+C
                 break
 
             printMsg(output)
@@ -157,5 +157,5 @@ def main():
         node.destroy_node()
         rclpy.shutdown()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
