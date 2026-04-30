@@ -1,4 +1,4 @@
-// -*- mode: c++ -*-
+// -*- Mode: c++ -*-
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -35,7 +35,7 @@
 
 #pragma once
 
-/* common utility */
+/* Common utility */
 #include <deque>
 #include <fnmatch.h>
 #include <kdl/frames.hpp>
@@ -44,237 +44,247 @@
 #include <kalman_filter/kf_base_plugin.h>
 #include <aerial_robot_model/model/aerial_robot_model.h>
 
-/* ros API */
+/* ROS API */
 #include <rclcpp/rclcpp.hpp>
 #include <pluginlib/class_loader.hpp>
 #include <tf2_ros/transform_broadcaster.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-/* ros messages */
+/* ROS messages */
 #include <aerial_robot_msgs/msg/states.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
-//#include <geographic_msgs/msg/geo_point.hpp>
+//#Include <geographic_msgs/msg/geo_point.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/u_int8.hpp>
 
-using StatusVector = std::array<int, 3>; // x, y, z
-using StatusMatrix = std::array<StatusVector, 3>; // egomotion, experiment, ground truth
+using StatusVector = std::array<int, 3>;           // X, y, z
+using StatusMatrix = std::array<StatusVector, 3>;  // Egomotion, experiment, ground truth
 using FuserPtr = std::shared_ptr<kf_plugin::KalmanFilter>;
 using FuserList = std::vector<std::pair<std::string, FuserPtr>>;
 
-namespace State {
-  enum {
-      X, Y, Z
-  };
+namespace State
+{
+enum
+{
+  X,
+  Y,
+  Z
+};
 };
 
-namespace Sensor {
-  enum {
-    UNHEALTH_LEVEL1 = 1, // do nothing
-    UNHEALTH_LEVEL2, // change estimation mode
-    UNHEALTH_LEVEL3, // force landing
-  };
+namespace Sensor
+{
+enum
+{
+  UNHEALTH_LEVEL1 = 1,  // Do nothing
+  UNHEALTH_LEVEL2,      // Change estimation mode
+  UNHEALTH_LEVEL3,      // Force landing
+};
 };
 
-/* pre-definition */
-namespace sensor_plugin {
-  class  SensorBase;
+/* Pre-definition */
+namespace sensor_plugin
+{
+class SensorBase;
 };
 
 
-namespace aerial_robot_estimation {
-  //mode
-  static constexpr int NONE = -1;
-  static constexpr int EGOMOTION_ESTIMATE = 0;
-  static constexpr int EXPERIMENT_ESTIMATE = 1;
-  static constexpr int GROUND_TRUTH = 2;
+namespace aerial_robot_estimation
+{
+// Mode
+static constexpr int NONE = -1;
+static constexpr int EGOMOTION_ESTIMATE = 0;
+static constexpr int EXPERIMENT_ESTIMATE = 1;
+static constexpr int GROUND_TRUTH = 2;
 
-  static constexpr float G = 9.797;
+static constexpr float G = 9.797;
 
-  class StateEstimator: public std::enable_shared_from_this<StateEstimator> {
+class StateEstimator : public std::enable_shared_from_this<StateEstimator>
+{
+public:
+  StateEstimator();
+  virtual ~StateEstimator() = default;
 
-  public:
-    StateEstimator();
-    virtual ~StateEstimator() = default;
+  void initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aerial_robot_model::RobotModel> robot_model);
 
-    void initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aerial_robot_model::RobotModel> robot_model);
+  int getBasePosStateStatus(uint8_t axis, uint8_t estimate_mode);
+  int getCogPosStateStatus(uint8_t axis, uint8_t estimate_mode);
+  int getBaseRotStateStatus(uint8_t estimate_mode);
+  int getCogRotStateStatus(uint8_t estimate_mode);
+  void setBasePosStateStatus(uint8_t axis, uint8_t estimate_mode, bool status);
+  void setCogPosStateStatus(uint8_t axis, uint8_t estimate_mode, bool status);
+  void setBaseRotStateStatus(uint8_t estimate_mode, bool status);
+  void setCogRotStateStatus(uint8_t estimate_mode, bool status);
 
-    int getBasePosStateStatus(uint8_t axis, uint8_t estimate_mode);
-    int getCogPosStateStatus(uint8_t axis, uint8_t estimate_mode);
-    int getBaseRotStateStatus(uint8_t estimate_mode);
-    int getCogRotStateStatus(uint8_t estimate_mode);
-    void setBasePosStateStatus(uint8_t axis, uint8_t estimate_mode, bool status);
-    void setCogPosStateStatus(uint8_t axis, uint8_t estimate_mode, bool status);
-    void setBaseRotStateStatus(uint8_t estimate_mode, bool status);
-    void setCogRotStateStatus(uint8_t estimate_mode, bool status);
+  const KDL::Frame getBasePose(int estimate_mode);
+  void setBasePose(int estimate_mode, KDL::Frame pose);
+  const KDL::Twist getBaseTwist(int estimate_mode);
+  void setBaseTwist(int estimate_mode, KDL::Twist twist);
+  const KDL::Vector getBasePos(int estimate_mode);
+  void setBasePos(int estimate_mode, KDL::Vector pos);
+  void setBasePosX(int estimate_mode, double pos);
+  void setBasePosY(int estimate_mode, double pos);
+  void setBasePosZ(int estimate_mode, double pos);
+  const KDL::Vector getBaseVel(int estimate_mode);
+  void setBaseVel(int estimate_mode, KDL::Vector vel);
+  void setBaseVelX(int estimate_mode, double vel);
+  void setBaseVelY(int estimate_mode, double vel);
+  void setBaseVelZ(int estimate_mode, double vel);
+  const KDL::Vector getBaseAcc(int estimate_mode);
+  void setBaseAcc(int estimate_mode, KDL::Vector acc);
 
-    const KDL::Frame getBasePose(int estimate_mode);
-    void setBasePose(int estimate_mode, KDL::Frame pose);
-    const KDL::Twist getBaseTwist(int estimate_mode);
-    void setBaseTwist(int estimate_mode, KDL::Twist twist);
-    const KDL::Vector getBasePos(int estimate_mode);
-    void setBasePos(int estimate_mode, KDL::Vector pos);
-    void setBasePosX(int estimate_mode, double pos);
-    void setBasePosY(int estimate_mode, double pos);
-    void setBasePosZ(int estimate_mode, double pos);
-    const KDL::Vector getBaseVel(int estimate_mode);
-    void setBaseVel(int estimate_mode, KDL::Vector vel);
-    void setBaseVelX(int estimate_mode, double vel);
-    void setBaseVelY(int estimate_mode, double vel);
-    void setBaseVelZ(int estimate_mode, double vel);
-    const KDL::Vector getBaseAcc(int estimate_mode);
-    void setBaseAcc(int estimate_mode, KDL::Vector acc);
+  const KDL::Rotation getBaseOrientation(int estimate_mode);
+  void setBaseOrientation(int estimate_mode, KDL::Rotation rot);
+  const KDL::Vector getBaseEuler(int estimate_mode);
+  const KDL::Vector getBaseAngularVel(int estimate_mode);
+  void setBaseAngularVel(int estimate_mode, KDL::Vector omega);
 
-    const KDL::Rotation getBaseOrientation(int estimate_mode);
-    void setBaseOrientation(int estimate_mode, KDL::Rotation rot);
-    const KDL::Vector getBaseEuler(int estimate_mode);
-    const KDL::Vector getBaseAngularVel(int estimate_mode);
-    void setBaseAngularVel(int estimate_mode, KDL::Vector omega);
+  const KDL::Frame getCogPose(int estimate_mode);
+  void setCogPose(int estimate_mode, KDL::Frame pose);
+  const KDL::Twist getCogTwist(int estimate_mode);
+  void setCogTwist(int estimate_mode, KDL::Twist twist);
+  const KDL::Vector getCogPos(int estimate_mode);
+  void setCogPos(int estimate_mode, KDL::Vector pos);
+  const KDL::Vector getCogVel(int estimate_mode);
+  void setCogVel(int estimate_mode, KDL::Vector vel);
+  const KDL::Vector getCogAcc(int estimate_mode);
+  void setCogAcc(int estimate_mode, KDL::Vector acc);
+  const KDL::Rotation getCogOrientation(int estimate_mode);
+  void setCogOrientation(int estimate_mode, KDL::Rotation rot);
+  const KDL::Vector getCogEuler(int estimate_mode);
+  const KDL::Vector getCogAngularVel(int estimate_mode);
+  void setCogAngularVel(int estimate_mode, KDL::Vector omega);
 
-    const KDL::Frame getCogPose(int estimate_mode);
-    void setCogPose(int estimate_mode, KDL::Frame pose);
-    const KDL::Twist getCogTwist(int estimate_mode);
-    void setCogTwist(int estimate_mode, KDL::Twist twist);
-    const KDL::Vector getCogPos(int estimate_mode);
-    void setCogPos(int estimate_mode, KDL::Vector pos);
-    const KDL::Vector getCogVel(int estimate_mode);
-    void setCogVel(int estimate_mode, KDL::Vector vel);
-    const KDL::Vector getCogAcc(int estimate_mode);
-    void setCogAcc(int estimate_mode, KDL::Vector acc);
-    const KDL::Rotation getCogOrientation(int estimate_mode);
-    void setCogOrientation(int estimate_mode, KDL::Rotation rot);
-    const KDL::Vector getCogEuler(int estimate_mode);
-    const KDL::Vector getCogAngularVel(int estimate_mode);
-    void setCogAngularVel(int estimate_mode, KDL::Vector omega);
-
-    void setBaseOrientationWxB(int estimate_mode, KDL::Vector v);
-    void setBaseOrientationWzB(int estimate_mode, KDL::Vector v);
-    void setCogOrientationWxB(int estimate_mode, KDL::Vector v);
-    void setCogOrientationWzB(int estimate_mode, KDL::Vector v);
-
-
-    inline void setBaseQueueSize(const int& qu_size) {qu_size_ = qu_size;}
-    void updateBaseQueue(const double timestamp, const KDL::Rotation r_ee, const KDL::Rotation r_ex, const KDL::Vector omega);
-    bool findBaseRotOmega(const double timestamp, const int mode, KDL::Rotation& r, KDL::Vector& omega, bool verbose = true);
-
-    const double getImuLatestTimeStamp();
-
-    inline void setSensorFusionFlag(bool flag){sensor_fusion_flag_ = flag;  }
-    inline bool getSensorFusionFlag(){return sensor_fusion_flag_; }
-
-    //start flying flag (~takeoff)
-    virtual bool getFlyingFlag() {  return  flying_flag_;}
-    virtual void setFlyingFlag(bool flag){  flying_flag_ = flag;}
-    /* when takeoff, should use the undescend mode be true */
-    inline void setUnDescendMode(bool flag){un_descend_flag_ = flag;  }
-    inline bool getUnDescendMode(){return un_descend_flag_; }
-    /* att control mode is for user to manually control x and y motion by attitude control */
-    inline void setForceAttControlFlag (bool flag) {force_att_control_flag_ = flag; }
-    inline bool getForceAttControlFlag () {return force_att_control_flag_;}
-    /* latitude & longitude value for GPS based navigation */
-    // inline void setCurrGpsPoint(const geographic_msgs::GeoPoint point) {curr_wgs84_poiont_ = point;}
-    // inline const geographic_msgs::GeoPoint& getCurrGpsPoint() const {return curr_wgs84_poiont_;}
-    inline const bool hasGroundTruthOdom() const {return has_groundtruth_odom_; }
-    inline void receiveGroundTruthOdom(bool flag) {has_groundtruth_odom_ = flag; }
-    inline const bool hasRefinedYawEstimate(int i) const {return has_refined_yaw_estimate_.at(i); }
-    inline void SetRefinedYawEstimate(int i, bool flag) {has_refined_yaw_estimate_.at(i) = flag; }
-
-    const FuserList& getFuserList(int mode);
-
-    inline int getEstimateMode() {return estimate_mode_;}
-    inline void setEstimateMode(int estimate_mode) {estimate_mode_ = estimate_mode;}
-
-    /* set unhealth level */
-    void setUnhealthLevel(uint8_t unhealth_level);
-
-    inline uint8_t getUnhealthLevel() { return unhealth_level_; }
-    std::string getTFPrefix() {return tf_prefix_;}
-
-    const vector<std::shared_ptr<sensor_plugin::SensorBase> >& getImuHandlers() const { return imu_handlers_;}
-    const vector<std::shared_ptr<sensor_plugin::SensorBase> >& getAltHandlers() const { return alt_handlers_;}
-    const vector<std::shared_ptr<sensor_plugin::SensorBase> >& getVoHandlers() const { return vo_handlers_;}
-    const vector<std::shared_ptr<sensor_plugin::SensorBase> >& getGpsHandlers() const { return gps_handlers_;}
-
-    const std::shared_ptr<sensor_plugin::SensorBase> getImuHandler(int i) const { return imu_handlers_.at(i);}
-    const std::shared_ptr<sensor_plugin::SensorBase> getAltHandlers(int i) const { return alt_handlers_.at(i);}
-    const std::shared_ptr<sensor_plugin::SensorBase> getVoHandlers(int i) const { return vo_handlers_.at(i);}
-    const std::shared_ptr<sensor_plugin::SensorBase> getGpsHandlers(int i) const { return gps_handlers_.at(i);}
-
-  protected:
-
-    /* node handle */
-    rclcpp::Node::SharedPtr node_;
-
-    /* publisher */
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr baselink_odom_pub_, cog_odom_pub_;
-
-    /* timer */
-    rclcpp::TimerBase::SharedPtr state_process_timer_;
-
-    /* tf broadcaster */
-    std::shared_ptr<tf2_ros::TransformBroadcaster> br_;
+  void setBaseOrientationWxB(int estimate_mode, KDL::Vector v);
+  void setBaseOrientationWzB(int estimate_mode, KDL::Vector v);
+  void setCogOrientationWxB(int estimate_mode, KDL::Vector v);
+  void setCogOrientationWzB(int estimate_mode, KDL::Vector v);
 
 
-    /* sensor handlers */
-    std::shared_ptr<pluginlib::ClassLoader<sensor_plugin::SensorBase>> sensor_loader_ptr_;
-    vector<std::shared_ptr<sensor_plugin::SensorBase> > sensors_;
-    vector<std::shared_ptr<sensor_plugin::SensorBase> > imu_handlers_;
-    vector<std::shared_ptr<sensor_plugin::SensorBase> > alt_handlers_;
-    vector<std::shared_ptr<sensor_plugin::SensorBase> > vo_handlers_;
-    vector<std::shared_ptr<sensor_plugin::SensorBase> > gps_handlers_;
+  inline void setBaseQueueSize(const int &qu_size) { qu_size_ = qu_size; }
+  void updateBaseQueue(const double timestamp, const KDL::Rotation r_ee, const KDL::Rotation r_ex,
+                       const KDL::Vector omega);
+  bool findBaseRotOmega(const double timestamp, const int mode, KDL::Rotation &r, KDL::Vector &omega,
+                        bool verbose = true);
 
-    /* mutex */
-    std::mutex state_mutex_;
-    std::mutex queue_mutex_;
-    /* ros param */
-    int estimate_mode_; /* main estimte mode */
+  const double getImuLatestTimeStamp();
 
-    /* robot model (kinematics)  */
-    std::shared_ptr<aerial_robot_model::RobotModel> robot_model_;
-    std::string tf_prefix_;
+  inline void setSensorFusionFlag(bool flag) { sensor_fusion_flag_ = flag; }
+  inline bool getSensorFusionFlag() { return sensor_fusion_flag_; }
 
-    /* states */
-    StatusMatrix base_pos_status_matrix_, cog_pos_status_matrix_;
-    std::array<int, 3> base_rot_status_, cog_rot_status_;
-    std::array<KDL::Frame, 3> base_pose_, cog_pose_;
-    std::array<KDL::Twist, 3> base_twist_, cog_twist_;
-    std::array<KDL::Vector, 3> base_acc_, cog_acc_;
+  // Start flying flag (~takeoff)
+  virtual bool getFlyingFlag() { return flying_flag_; }
+  virtual void setFlyingFlag(bool flag) { flying_flag_ = flag; }
+  /* When takeoff, should use the undescend mode be true */
+  inline void setUnDescendMode(bool flag) { un_descend_flag_ = flag; }
+  inline bool getUnDescendMode() { return un_descend_flag_; }
+  /* Att control mode is for user to manually control x and y motion by attitude control */
+  inline void setForceAttControlFlag(bool flag) { force_att_control_flag_ = flag; }
+  inline bool getForceAttControlFlag() { return force_att_control_flag_; }
+  /* Latitude & longitude value for GPS based navigation */
+  // Inline void setCurrGpsPoint(const geographic_msgs::GeoPoint point) {curr_wgs84_poiont_ = point;}
+  // Inline const geographic_msgs::GeoPoint& getCurrGpsPoint() const {return curr_wgs84_poiont_;}
+  inline const bool hasGroundTruthOdom() const { return has_groundtruth_odom_; }
+  inline void receiveGroundTruthOdom(bool flag) { has_groundtruth_odom_ = flag; }
+  inline const bool hasRefinedYawEstimate(int i) const { return has_refined_yaw_estimate_.at(i); }
+  inline void SetRefinedYawEstimate(int i, bool flag) { has_refined_yaw_estimate_.at(i) = flag; }
 
-    bool has_groundtruth_odom_; // whether receive entire groundthtruth odometry (e.g., for simulation mode)
+  const FuserList &getFuserList(int mode);
 
-    std::map<int, bool> has_refined_yaw_estimate_; // whether receive refined yaw estimation data (e.g., vio) for each estimate mode
+  inline int getEstimateMode() { return estimate_mode_; }
+  inline void setEstimateMode(int estimate_mode) { estimate_mode_ = estimate_mode; }
 
-    /* for calculate the sensor to baselink with the consideration of time delay */
-    int qu_size_;
-    deque<double> timestamp_qu_;
-    deque<KDL::Rotation> base_rot_ee_qu_, base_rot_ex_qu_;
-    deque<KDL::Vector> base_omega_qu_;
+  /* Set unhealth level */
+  void setUnhealthLevel(uint8_t unhealth_level);
 
-    /* sensor fusion */
-    std::shared_ptr<pluginlib::ClassLoader<kf_plugin::KalmanFilter>> fusion_loader_ptr_;
-    bool sensor_fusion_flag_;
-    std::array<FuserList, 2> fuser_maps_; //0: egomotion; 1: experiment
+  inline uint8_t getUnhealthLevel() { return unhealth_level_; }
+  std::string getTFPrefix() { return tf_prefix_; }
 
-    /* sensor (un)health level */
-    uint8_t unhealth_level_;
+  const vector<std::shared_ptr<sensor_plugin::SensorBase>> &getImuHandlers() const { return imu_handlers_; }
+  const vector<std::shared_ptr<sensor_plugin::SensorBase>> &getAltHandlers() const { return alt_handlers_; }
+  const vector<std::shared_ptr<sensor_plugin::SensorBase>> &getVoHandlers() const { return vo_handlers_; }
+  const vector<std::shared_ptr<sensor_plugin::SensorBase>> &getGpsHandlers() const { return gps_handlers_; }
 
-    /* height related var */
-    bool flying_flag_;
-    bool un_descend_flag_;
-    bool force_att_control_flag_;
+  const std::shared_ptr<sensor_plugin::SensorBase> getImuHandler(int i) const { return imu_handlers_.at(i); }
+  const std::shared_ptr<sensor_plugin::SensorBase> getAltHandlers(int i) const { return alt_handlers_.at(i); }
+  const std::shared_ptr<sensor_plugin::SensorBase> getVoHandlers(int i) const { return vo_handlers_.at(i); }
+  const std::shared_ptr<sensor_plugin::SensorBase> getGpsHandlers(int i) const { return gps_handlers_.at(i); }
 
-    /* latitude & longitude point */
-    //geographic_msgs::GeoPoint curr_wgs84_poiont_;
+protected:
+  /* Node handle */
+  rclcpp::Node::SharedPtr node_;
 
-    /* time */
-    rclcpp::Time prev_pub_stamp_;
+  /* Publisher */
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr baselink_odom_pub_, cog_odom_pub_;
 
-    void process();
-    void sensorHealthCheck();
-    void publish();
-    void odomPublish(rclcpp::Time stamp);
-    void tfBroadcast(rclcpp::Time stamp);
-    void load();
-  };
+  /* Timer */
+  rclcpp::TimerBase::SharedPtr state_process_timer_;
+
+  /* Tf broadcaster */
+  std::shared_ptr<tf2_ros::TransformBroadcaster> br_;
+
+
+  /* Sensor handlers */
+  std::shared_ptr<pluginlib::ClassLoader<sensor_plugin::SensorBase>> sensor_loader_ptr_;
+  vector<std::shared_ptr<sensor_plugin::SensorBase>> sensors_;
+  vector<std::shared_ptr<sensor_plugin::SensorBase>> imu_handlers_;
+  vector<std::shared_ptr<sensor_plugin::SensorBase>> alt_handlers_;
+  vector<std::shared_ptr<sensor_plugin::SensorBase>> vo_handlers_;
+  vector<std::shared_ptr<sensor_plugin::SensorBase>> gps_handlers_;
+
+  /* Mutex */
+  std::mutex state_mutex_;
+  std::mutex queue_mutex_;
+  /* ROS param */
+  int estimate_mode_; /* Main estimte mode */
+
+  /* Robot model (kinematics)  */
+  std::shared_ptr<aerial_robot_model::RobotModel> robot_model_;
+  std::string tf_prefix_;
+
+  /* States */
+  StatusMatrix base_pos_status_matrix_, cog_pos_status_matrix_;
+  std::array<int, 3> base_rot_status_, cog_rot_status_;
+  std::array<KDL::Frame, 3> base_pose_, cog_pose_;
+  std::array<KDL::Twist, 3> base_twist_, cog_twist_;
+  std::array<KDL::Vector, 3> base_acc_, cog_acc_;
+
+  bool has_groundtruth_odom_;  // Whether receive entire groundthtruth odometry (e.g., for simulation mode)
+
+  std::map<int, bool> has_refined_yaw_estimate_;  // Whether receive refined yaw estimation data (e.g., vio) for each
+                                                  // Estimate mode
+
+  /* For calculate the sensor to baselink with the consideration of time delay */
+  int qu_size_;
+  deque<double> timestamp_qu_;
+  deque<KDL::Rotation> base_rot_ee_qu_, base_rot_ex_qu_;
+  deque<KDL::Vector> base_omega_qu_;
+
+  /* Sensor fusion */
+  std::shared_ptr<pluginlib::ClassLoader<kf_plugin::KalmanFilter>> fusion_loader_ptr_;
+  bool sensor_fusion_flag_;
+  std::array<FuserList, 2> fuser_maps_;  // 0: Egomotion; 1: experiment
+
+  /* Sensor (un)health level */
+  uint8_t unhealth_level_;
+
+  /* Height related var */
+  bool flying_flag_;
+  bool un_descend_flag_;
+  bool force_att_control_flag_;
+
+  /* Latitude & longitude point */
+  // geographic_msgs::GeoPoint curr_wgs84_poiont_;
+
+  /* Time */
+  rclcpp::Time prev_pub_stamp_;
+
+  void process();
+  void sensorHealthCheck();
+  void publish();
+  void odomPublish(rclcpp::Time stamp);
+  void tfBroadcast(rclcpp::Time stamp);
+  void load();
 };
+};  // Namespace aerial_robot_estimation

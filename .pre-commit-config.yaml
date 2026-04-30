@@ -4,6 +4,11 @@ repos:
     hooks:
       - id: clang-format
         name: clang-format
-        entry: clang-format -i
+        entry: clang-format -i --style=file:pre-commit/.clang-format
+        language: system
+        files: \.(cpp|cc|h|hpp)$
+      - id: capitalize-comments
+        name: Capitalize C++ comments
+        entry: python pre-commit/capitalize_cpp_comments.py
         language: system
         files: \.(cpp|cc|h|hpp)$
