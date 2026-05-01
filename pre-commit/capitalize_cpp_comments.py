@@ -5,9 +5,9 @@ capitalize_comments.py
 Pre-commit hook that capitalizes the first letter of every C++ comment.
 
 Handles:
-  - Single-line comments  : // some text  →  // Some text
-  - Inline comments       : int x; // note  →  int x; // Note
-  - Block comments        : /* text */  →  /* Text */
+  - Single-line comments  : // some text  ->  // Some text
+  - Inline comments       : int x; // note  ->  int x; // Note
+  - Block comments        : /* text */  ->  /* Text */
   - Multi-line block comments (each line's leading text is capitalized)
 
 Usage (called by pre-commit):
@@ -53,14 +53,22 @@ _TOKEN_RE = re.compile(
 
 def _capitalize_comment_text(text: str) -> str:
     """Uppercase the very first alphabetic character in *text*."""
+    stripped = text.lstrip(" \t")
+    if not stripped:
+        return text
+    # If the first non-whitespace character is not alphabetic (e.g. '<', '.',
+    # '(', '-', '1'), do not attempt capitalization.
+    if not stripped[0].isalpha():
+        return text
+
     # Do not capitalize if the very first word in the comment contains an
     # underscore, as it is likely a variable name or commented-out code.
-    m = re.search(r'[a-zA-Z_]\w*', text)
+    m = re.search(r"[a-zA-Z_]\w*", text)
     if m:
-        if '_' in m.group(0):
+        if "_" in m.group(0):
             return text
-        if m.group(0).lower() == 'ros':
-            return text[:m.start()] + 'ROS' + text[m.end():]
+        if m.group(0).lower() == "ros":
+            return text[: m.start()] + "ROS" + text[m.end() :]
 
     for i, ch in enumerate(text):
         if ch.isalpha():
@@ -70,10 +78,10 @@ def _capitalize_comment_text(text: str) -> str:
 
 def _process_line_comment(raw: str) -> str:
     """Capitalise a // comment, preserving the // prefix and any leading spaces."""
-    # raw starts with '//'
+    # Raw starts with '//'
     prefix = "//"
     rest = raw[len(prefix) :]
-    # preserve leading whitespace after //
+    # Preserve leading whitespace after //
     stripped = rest.lstrip(" \t")
     leading = rest[: len(rest) - len(stripped)]
     return prefix + leading + _capitalize_comment_text(stripped)
@@ -86,7 +94,7 @@ def _process_block_comment(raw: str) -> str:
     """
     # Split into /* , body , */
     assert raw.startswith("/*") and raw.endswith("*/")
-    inner = raw[2:-2]  # everything between /* and */
+    inner = raw[2:-2]  # Everything between /* and */
 
     lines = inner.split("\n")
     result_lines = []
@@ -129,7 +137,7 @@ def process_source(source: str) -> str:
             if last_was_line_comment and (not gap or gap.isspace()):
                 if gap.count("\n") <= 1:
                     is_continuation = True
-            
+
             if is_continuation:
                 result.append(raw)
             else:
@@ -139,7 +147,7 @@ def process_source(source: str) -> str:
             result.append(_process_block_comment(raw))
             last_was_line_comment = False
         else:
-            # string, rawstring – emit verbatim
+            # String, rawstring – emit verbatim
             result.append(raw)
             last_was_line_comment = False
 
@@ -151,6 +159,7 @@ def process_source(source: str) -> str:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     if len(sys.argv) < 2:

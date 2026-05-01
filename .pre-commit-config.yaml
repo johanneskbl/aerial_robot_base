@@ -1,14 +1,66 @@
 # .pre-commit-config.yaml
 repos:
+  # Python
+  - repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+      - id: black
+        language: python
+        args: [--line-length=120]
+
   - repo: local
     hooks:
+      # C++
       - id: clang-format
         name: clang-format
         entry: clang-format -i --style=file:pre-commit/.clang-format
         language: system
         files: \.(cpp|cc|h|hpp)$
-      - id: capitalize-comments
+
+      - id: capitalize-cpp-comments
         name: Capitalize C++ comments
         entry: python pre-commit/capitalize_cpp_comments.py
         language: system
         files: \.(cpp|cc|h|hpp)$
+
+      # Python
+      - id: capitalize-python-comments
+        name: Capitalize Python comments
+        entry: python pre-commit/capitalize_python_comments.py
+        language: system
+        files: \.py$
+
+      # YAML
+      - id: capitalize-yaml-comments
+        name: Capitalize YAML comments
+        entry: python pre-commit/capitalize_yaml_comments.py
+        language: system
+        files: \.(yaml|yml)$
+
+      # Txt
+      - id: capitalize-txt-comments
+        name: Capitalize TXT first lines
+        entry: python pre-commit/capitalize_txt_comments.py
+        language: system
+        files: \.txt$
+
+      # XML
+      - id: capitalize-xml-comments
+        name: Capitalize XML comments
+        entry: python pre-commit/capitalize_xml_comments.py
+        language: system
+        files: \.xml$
+
+      # Xacro
+      - id: capitalize-xacro-comments
+        name: Capitalize Xacro comments
+        entry: python pre-commit/capitalize_xacro_comments.py
+        language: system
+        files: \.xacro$
+
+      # Markdown
+      - id: capitalize-markdown-comments
+        name: Capitalize Markdown HTML comments
+        entry: python pre-commit/capitalize_md_comments.py
+        language: system
+        files: \.(md|markdown)$

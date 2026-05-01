@@ -9,7 +9,7 @@ sudo apt update
 # Install Python tools
 sudo apt install -y python3-vcstool python3-colcon-common-extensions python3-colcon-clean gdb clang-format
 # Install format tools
-pip install pre-commit
+pip install pre-commit black
 # Create workspace
 mkdir -p ~/ros2/aerial_robot_base_ws/src
 cd ~/ros2/aerial_robot_base_ws

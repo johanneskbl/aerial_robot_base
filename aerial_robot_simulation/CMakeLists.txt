@@ -41,7 +41,7 @@ include_directories(
   include
   )
 
-# rotor handle lib
+# Rotor handle lib
 add_library(rotor_handle_lib INTERFACE)
 target_include_directories(rotor_handle_lib INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -54,7 +54,7 @@ ament_target_dependencies(rotor_handle_lib INTERFACE
   aerial_robot_model
 )
 
-# spinal interface
+# Spinal interface
 add_library(spinal_interface SHARED
   src/spinal_interface.cpp
 )

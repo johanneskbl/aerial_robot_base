@@ -14,8 +14,8 @@
   <depend>aerial_robot_estimation</depend>
   <!-- <depend>aerial_robot_control</depend> -->
   <exec_depend>ros2launch</exec_depend>
-  <exec_depend>ament_cmake_python</exec_depend>
 
+  <exec_depend>ament_cmake_python</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

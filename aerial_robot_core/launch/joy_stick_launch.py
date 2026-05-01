@@ -11,36 +11,36 @@ _ARGS = [
     ("robot_ns", "/", "Namespace for all robot nodes"),
 ]
 
+
 def generate_launch_description():
     # ------------------------------------------------------------------
     # 1.  Declare CLI-overridable arguments
     # ------------------------------------------------------------------
     declared_args = [
         DeclareLaunchArgument(
-            name,
-            default_value=default_value,
-            description=description,
-            **({"choices": choices[0]} if choices else {})
+            name, default_value=default_value, description=description, **({"choices": choices[0]} if choices else {})
         )
         for name, default_value, description, *choices in _ARGS
     ]
 
     # Resolve / Read at launch time (NOT AT IMPORT TIME)
-    robot_ns        = LaunchConfiguration("robot_ns")
+    robot_ns = LaunchConfiguration("robot_ns")
 
     # ------------------------------------------------------------------
     # 2.  Nodes
     # ------------------------------------------------------------------
     joy_node = Node(
-        package='joy',
-        executable='joy_node',
-        name='joy_node',
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
         namespace=robot_ns,
-        output='screen',
-        parameters=[{
-            'dev': '/dev/input/js0',
-            'coalesce_interval': 0.025,
-        }]
+        output="screen",
+        parameters=[
+            {
+                "dev": "/dev/input/js0",
+                "coalesce_interval": 0.025,
+            }
+        ],
     )
 
     # ------------------------------------------------------------------
