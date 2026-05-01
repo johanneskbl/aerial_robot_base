@@ -113,22 +113,35 @@ def process_source(source: str) -> str:
     """Return *source* with all comments capitalised."""
     result = []
     prev_end = 0
+    last_was_line_comment = False
 
     for m in _TOKEN_RE.finditer(source):
         # Emit the literal text between the previous token and this one
-        result.append(source[prev_end : m.start()])
+        gap = source[prev_end : m.start()]
+        result.append(gap)
         prev_end = m.end()
 
         kind = m.lastgroup
         raw = m.group()
 
         if kind == "line":
-            result.append(_process_line_comment(raw))
+            is_continuation = False
+            if last_was_line_comment and (not gap or gap.isspace()):
+                if gap.count("\n") <= 1:
+                    is_continuation = True
+            
+            if is_continuation:
+                result.append(raw)
+            else:
+                result.append(_process_line_comment(raw))
+            last_was_line_comment = True
         elif kind == "block":
             result.append(_process_block_comment(raw))
+            last_was_line_comment = False
         else:
             # string, rawstring – emit verbatim
             result.append(raw)
+            last_was_line_comment = False
 
     # Tail after the last token
     result.append(source[prev_end:])
