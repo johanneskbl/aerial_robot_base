@@ -64,3 +64,16 @@ repos:
         entry: python pre-commit/capitalize_md_comments.py
         language: system
         files: \.(md|markdown)$
+
+      # License headers
+      - id: license-cpp
+        name: Add LICENSE header (C/C++)
+        entry: python pre-commit/license_cpp.py
+        language: system
+        files: \.(c|cpp|cc|h|hpp)$
+
+      - id: license-python
+        name: Add LICENSE header (Python)
+        entry: python pre-commit/license_python.py
+        language: system
+        files: \.py$
