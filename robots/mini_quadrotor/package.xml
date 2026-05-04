@@ -7,8 +7,8 @@
     URDF model for the mini quadrotor.
   </description>
   <maintainer email="TODO@TODO.com">TODO</maintainer>
+  <license>BSD-3</license>
   <author email="j-sugihara@dragon.t.u-tokyo.ac.jp">Junichiro Sugihara</author>
-  <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -22,6 +22,13 @@
   <depend>aerial_robot_simulation</depend>
   <depend>aerial_robot_core</depend>
 
+  <!-- Linters -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>  <!-- For Python docstrings -->
+  <test_depend>ament_cmake_xmllint</test_depend>
+  
   <export>
     <build_type>ament_cmake</build_type>
   </export>

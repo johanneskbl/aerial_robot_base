@@ -18,7 +18,6 @@ include_directories(
   ${SPINAL_DIRS}
 )
 
-
 add_definitions(-DSIMULATION)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -60,7 +59,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MagDeclination.srv"
   "srv/SetDirectServoConfig.srv"
   DEPENDENCIES std_msgs geometry_msgs
-  )
+)
 
 add_library(spinal_math
   ${SPINAL_DIRS}/math/AP_Math.cpp
@@ -69,21 +68,20 @@ add_library(spinal_math
   ${SPINAL_DIRS}/math/vector3.cpp
   ${SPINAL_DIRS}/math/quaternion.cpp
   ${SPINAL_DIRS}/math/location.cpp
-  )
-
+)
 
 add_library(spinal_state_estimation INTERFACE)
 target_include_directories(spinal_state_estimation
   INTERFACE
   $<BUILD_INTERFACE:${SPINAL_DIRS}>
   $<INSTALL_INTERFACE:include/My_Lib>
-  )
+)
 target_link_libraries(spinal_state_estimation
   INTERFACE
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   # spinal_math
-  )
+)
 
 
 install(
@@ -93,14 +91,14 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-  )
+)
 
 
 install(
   DIRECTORY ${SPINAL_DIRS}/
   DESTINATION include/My_Lib
   FILES_MATCHING PATTERN "*.h"
-  )
+)
 
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
@@ -110,5 +108,11 @@ ament_export_dependencies(rosidl_default_runtime
                           std_msgs
                           geometry_msgs
                           rclcpp_lifecycle)
+
+# Linters
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()

@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(aerial_robot_core)
 
+# C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(ament_cmake REQUIRED)
 find_package(aerial_robot_model REQUIRED)
 find_package(aerial_robot_estimation REQUIRED)
@@ -11,13 +15,13 @@ find_package(std_srvs REQUIRED)
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp
-  )
+)
 
 
 add_executable(aerial_robot_core_node
   src/aerial_robot_core_node.cpp
   src/aerial_robot_core.cpp
-  )
+)
 
 ament_target_dependencies(aerial_robot_core_node
   rclcpp
@@ -25,19 +29,19 @@ ament_target_dependencies(aerial_robot_core_node
   std_srvs
   aerial_robot_model
   aerial_robot_estimation
-  )
+)
 
 install(
   DIRECTORY include/
   DESTINATION include
-  )
+)
 
 install(TARGETS
   aerial_robot_core_node
   DESTINATION lib/${PROJECT_NAME}
-  )
+)
 
-# install python files
+# Install python files
 ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/keyboard_command.py
@@ -45,12 +49,18 @@ install(PROGRAMS
   scripts/send_igmp_report.py
   scripts/simple_demo.py
   DESTINATION lib/${PROJECT_NAME}
-  )
+)
 
-# install launch files
+# Install launch files
 install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
-  )
+)
+
+# Linters
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()
