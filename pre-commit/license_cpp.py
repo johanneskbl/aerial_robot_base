@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+
 """license_cpp.py
 
 Pre-commit hook that ensures the project LICENSE text is present as a header in
@@ -28,6 +31,16 @@ _SIGNATURE_NEEDLES = (
     "Software License Agreement (BSD-3 License)",
     "DRAGON Laboratory",
     "All rights reserved.",
+    "THIS SOFTWARE IS PROVIDED BY",
+)
+
+
+# These needles are used to *detect* an existing license header that should be
+# replaced. They are intentionally broader than _SIGNATURE_NEEDLES so we can
+# upgrade older variants (e.g., "BSD License" without "-3").
+_LICENSE_DETECTION_NEEDLES = (
+    "Software License Agreement",
+    "Redistribution and use",
     "THIS SOFTWARE IS PROVIDED BY",
 )
 
@@ -88,6 +101,15 @@ def _extract_comment_text(comment: str) -> str:
     return "\n".join(lines_out).strip("\n")
 
 
+def _looks_like_license_comment(comment: str) -> bool:
+    extracted = _extract_comment_text(comment)
+    if not extracted:
+        return False
+    # Only look at the beginning to avoid matching e.g. a large file banner.
+    head = extracted[:8000]
+    return all(needle in head for needle in _LICENSE_DETECTION_NEEDLES)
+
+
 def _find_top_license_comment_span(source: str) -> tuple[int, int, str] | None:
     """Find an existing license comment at the top of the file.
 
@@ -109,7 +131,8 @@ def _find_top_license_comment_span(source: str) -> tuple[int, int, str] | None:
         end += 2
         comment = source[idx:end]
         # Use a strong/unique trigger to avoid overwriting unrelated comments.
-        if _SIGNATURE_NEEDLES[0] in comment:
+        # Detect both the canonical BSD-3 header and older variants.
+        if _looks_like_license_comment(comment):
             return idx, end, comment
         return None
 
@@ -129,7 +152,8 @@ def _find_top_license_comment_span(source: str) -> tuple[int, int, str] | None:
                 end += 1
         comment = "\n".join(lines)
         # Use a strong/unique trigger to avoid overwriting unrelated comments.
-        if _SIGNATURE_NEEDLES[0] in comment:
+        # Detect both the canonical BSD-3 header and older variants.
+        if _looks_like_license_comment(comment):
             return idx, end, comment
         return None
 
