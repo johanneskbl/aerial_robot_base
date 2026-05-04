@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """license_python.py
 
-Pre-commit hook that ensures the project LICENSE text is present as a header in
-Python sources.
+Pre-commit hook that ensures a short SPDX license header is present in Python
+sources.
 
 Targets (via pre-commit config): .py
 
 Behavior:
-  - Reads LICENSE from the project root (sibling of the pre-commit/ directory)
-  - Inserts it as a block of `# ...` comments
-  - Preserves a shebang and PEP-263 encoding cookie (if present) at the top
-  - Idempotent: does nothing if the header already exists
+    - Reads LICENSE from the project root (sibling of the pre-commit/ directory)
+    - Parses license type and copyright year from LICENSE
+    - Prepends only:
+            # SPDX-License-Identifier: <id>
+            # Copyright (c) <year>, DRAGON Laboratory, The University of Tokyo
+    - Preserves a shebang and PEP-263 encoding cookie (if present) at the top
+    - Idempotent: does nothing if the header already exists
 
 Usage (called by pre-commit):
 	python pre-commit/license_python.py <file1> [file2 ...]
@@ -24,10 +27,8 @@ from pathlib import Path
 
 
 _SIGNATURE_NEEDLES = (
-    "Software License Agreement (BSD-3 License)",
-    "DRAGON Laboratory",
-    "All rights reserved.",
-    "THIS SOFTWARE IS PROVIDED BY",
+    "SPDX-License-Identifier:",
+    "DRAGON Laboratory, The University of Tokyo",
 )
 
 _ENCODING_RE = re.compile(r"^#.*coding[:=][ \t]*([-\w.]+)")
@@ -38,11 +39,10 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _read_license_text() -> str:
+def _read_license_file() -> str:
     license_path = _repo_root() / "LICENSE"
     text = license_path.read_text(encoding="utf-8")
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    return text.rstrip("\n") + "\n"
+    return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def _has_license_header(source: str) -> bool:
@@ -50,16 +50,38 @@ def _has_license_header(source: str) -> bool:
     return all(needle in head for needle in _SIGNATURE_NEEDLES)
 
 
-def _format_license_comment_block(license_text: str) -> str:
-    lines = license_text.splitlines()
-    out: list[str] = []
-    for line in lines:
-        if line.strip() == "":
-            out.append("#")
-        else:
-            out.append(f"# {line}")
-    out.append("")
-    return "\n".join(out)
+def _parse_spdx_license_identifier(license_text: str) -> str:
+    # Prefer explicit strings from the LICENSE; keep a small, conservative
+    # mapping rather than guessing.
+    upper = license_text.upper()
+    if "BSD-3" in upper or "BSD 3" in upper:
+        return "BSD-3-Clause"
+    if "BSD-2" in upper or "BSD 2" in upper:
+        return "BSD-2-Clause"
+    raise ValueError("Unsupported or unrecognized license type in LICENSE")
+
+
+_COPYRIGHT_YEAR_RE = re.compile(
+    r"copyright\s*\(\s*c\s*\)\s*(\d{4})(?:\s*-\s*(\d{4}))?",
+    flags=re.IGNORECASE,
+)
+
+
+def _parse_copyright_year(license_text: str) -> str:
+    match = _COPYRIGHT_YEAR_RE.search(license_text)
+    if not match:
+        raise ValueError("Cannot find a copyright year in LICENSE")
+    start_year, end_year = match.group(1), match.group(2)
+    return end_year or start_year
+
+
+def _format_spdx_header(spdx_id: str, year: str) -> str:
+    # Must match the exact desired header lines.
+    return (
+        f"# SPDX-License-Identifier: {spdx_id}\n"
+        f"# Copyright (c) {year}, DRAGON Laboratory, The University of Tokyo\n"
+        "\n"
+    )
 
 
 def _split_python_preamble(lines: list[str]) -> tuple[list[str], list[str]]:
@@ -94,7 +116,7 @@ def _split_python_preamble(lines: list[str]) -> tuple[list[str], list[str]]:
     return preamble, lines[idx:]
 
 
-def _apply_to_source(source: str, license_text: str) -> str:
+def _apply_to_source(source: str, header_text: str) -> str:
     bom = ""
     if source.startswith("\ufeff"):
         bom = "\ufeff"
@@ -107,7 +129,9 @@ def _apply_to_source(source: str, license_text: str) -> str:
     lines = source.split("\n")
 
     preamble, rest = _split_python_preamble(lines)
-    header = _format_license_comment_block(license_text)
+    header = header_text
+    if not header.endswith("\n"):
+        header += "\n"
 
     # If file is empty (or only preamble), ensure we don't create extra leading
     # blank lines beyond the standard header separator.
@@ -128,9 +152,15 @@ def main() -> int:
         return 1
 
     try:
-        license_text = _read_license_text()
+        license_text = _read_license_file()
+        spdx_id = _parse_spdx_license_identifier(license_text)
+        year = _parse_copyright_year(license_text)
+        header_text = _format_spdx_header(spdx_id, year)
     except OSError as exc:
         print(f"ERROR: Cannot read LICENSE: {exc}", file=sys.stderr)
+        return 1
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
     changed_files: list[str] = []
@@ -144,7 +174,7 @@ def main() -> int:
             errors.append(f"Cannot read {path_str}: {exc}")
             continue
 
-        processed = _apply_to_source(original, license_text)
+        processed = _apply_to_source(original, header_text)
 
         if processed != original:
             try:
@@ -154,7 +184,7 @@ def main() -> int:
                 errors.append(f"Cannot write {path_str}: {exc}")
 
     if changed_files:
-        print("license_python: added LICENSE header to:")
+        print("license_python: added SPDX header to:")
         for f in changed_files:
             print(f"  {f}")
 

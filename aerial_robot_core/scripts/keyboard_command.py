@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 
 import sys
 import select
@@ -34,6 +36,7 @@ CTRL+c to quit
 ---------------------------
 """
 
+
 def getKey():
     tty.setraw(sys.stdin.fileno())
     select.select([sys.stdin], [], [], 0)
@@ -41,8 +44,10 @@ def getKey():
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
+
 def printMsg(msg_str, msg_len=50):
     print(msg_str.ljust(msg_len) + "\r", end="")
+
 
 class KeyboardCommandNode(Node):
     def __init__(self):
@@ -143,6 +148,7 @@ class KeyboardCommandNode(Node):
             printMsg(output)
             time.sleep(0.001)
 
+
 def main():
     global settings
     settings = termios.tcgetattr(sys.stdin)
@@ -156,6 +162,7 @@ def main():
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()
