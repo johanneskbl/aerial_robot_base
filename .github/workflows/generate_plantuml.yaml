@@ -1,4 +1,4 @@
-name: Generate plantuml
+name: Generate PlantUML Diagrams
 on: push
 jobs:
   generate_plantuml:

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+
 """
 capitalize_yaml_comments.py
 
@@ -16,6 +19,80 @@ Usage (called by pre-commit):
 
 import re
 import sys
+
+
+# ---------------------------------------------------------------------------
+# Heuristics
+# ---------------------------------------------------------------------------
+
+# If a comment starts with one of these tokens, it's likely a shell command
+# snippet that should remain lowercase for copy/paste.
+_COMMAND_WORDS = frozenset(
+    {
+        "sudo",
+        "apt",
+        "apt-get",
+        "dnf",
+        "yum",
+        "pacman",
+        "brew",
+        "pip",
+        "pip3",
+        "python",
+        "python3",
+        "ros2",
+        "rosdep",
+        "colcon",
+        "git",
+        "cmake",
+        "make",
+        "ninja",
+        "docker",
+        "podman",
+        "systemctl",
+        "journalctl",
+        "ls",
+        "cd",
+        "cp",
+        "mv",
+        "rm",
+        "mkdir",
+        "ln",
+        "chmod",
+        "chown",
+        "cat",
+        "echo",
+        "grep",
+        "sed",
+        "awk",
+        "find",
+        "xargs",
+        "curl",
+        "wget",
+        "tar",
+        "unzip",
+    }
+)
+
+
+def _looks_like_command_comment(text: str) -> bool:
+    stripped = text.lstrip(" \t")
+    if not stripped:
+        return False
+
+    first = stripped.split(None, 1)[0]
+    first = first.strip("`")
+    first = first.rstrip(",:;")
+    first_lower = first.lower()
+
+    if first_lower in _COMMAND_WORDS:
+        return True
+
+    # Relative/absolute script invocation like: ./script.sh --flag
+    if first_lower.startswith("./") or first_lower.startswith("/") or first_lower.startswith("~/"):
+        return True
+
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -80,6 +157,10 @@ def _process_comment(raw: str) -> str:
     # Special directives - leave alone.
     lower = stripped.lower()
     if lower.startswith(("noqa", "type:", "fmt:", "yaml-language-server")):
+        return raw
+
+    # Likely copy/pastable command snippet (e.g. "sudo apt …") - leave alone.
+    if _looks_like_command_comment(stripped):
         return raw
 
     return before_hash + "#" + leading + _capitalize_comment_text(stripped)

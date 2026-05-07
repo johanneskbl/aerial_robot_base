@@ -6,55 +6,72 @@ jobs:
   lint:
     name: Ament Build & Linters
     runs-on: ubuntu-latest
-
-    container: ubuntu:22.04
+    container: ros:humble  # Can be changed/updated
+    env:
+      ROS_DISTRO: humble  # Can be changed/updated
+      DEBIAN_FRONTEND: noninteractive
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          path: src/${{ github.event.repository.name }}
           fetch-depth: 0
 
-      - name: Setup ROS2 (Humble)
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: humble
-
-      - name: Install lint dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            ros-humble-ament-cmake \
-            ros-humble-ament-lint-auto \
-            ros-humble-ament-cmake-cppcheck \
-            ros-humble-ament-cmake-lint-cmake \
-            ros-humble-ament-cmake-pep257 \
-            ros-humble-ament-cmake-xmllint \
-            cppcheck \
-            python3-pep257 \
-            xmllint
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            python3-vcstool \
+            python3-colcon-common-extensions \
+            ros-${ROS_DISTRO}-ament-cmake \
+            ros-${ROS_DISTRO}-ament-lint-auto \
+            ros-${ROS_DISTRO}-ament-cmake-cppcheck \
+            ros-${ROS_DISTRO}-ament-cmake-lint-cmake \
+            ros-${ROS_DISTRO}-ament-cmake-pep257 \
+            ros-${ROS_DISTRO}-ament-cmake-xmllint
+        
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
+            rosdep init
+          fi
+          rosdep update
+          vcs import src < src/${{ github.event.repository.name }}/aerial_robot_${{ env.ROS_DISTRO }}.repos
+          rosdep install -y -r \
+            --from-paths src \
+            --ignore-src \
+            --rosdistro ${ROS_DISTRO}
+
+      - name: Export ROS environment
+        run: |
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          {
+            echo "AMENT_PREFIX_PATH=$AMENT_PREFIX_PATH"
+            echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
+            echo "COLCON_PREFIX_PATH=$COLCON_PREFIX_PATH"
+            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+            echo "PATH=$PATH"
+            echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+            echo "PYTHONPATH=$PYTHONPATH"
+            echo "ROS_DISTRO=$ROS_DISTRO"
+            echo "ROS_VERSION=$ROS_VERSION"
+          } >> "$GITHUB_ENV"
 
       - name: Build and run lint tests
         run: |
-          source /opt/ros/humble/setup.bash
-
-          # Create a dedicated build directory for lint tests only
-          mkdir -p lint_ws/src
-          cp -r . lint_ws/src/$(basename $GITHUB_WORKSPACE)
-          cd lint_ws
-
           colcon build \
-            --cmake-args -DBUILD_TESTING=ON \
             --event-handlers console_cohesion+
 
           colcon test \
             --packages-skip kalman_filter \
             --packages-skip ros2_numpy \
             --event-handlers console_cohesion+ \
-            --return-code-on-test-failure 
+            --return-code-on-test-failure
 
       - name: Show test results on failure
         if: failure()
         run: |
-          cd lint_ws
           colcon test-result --all --verbose
