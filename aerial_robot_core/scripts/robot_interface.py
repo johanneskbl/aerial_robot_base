@@ -86,10 +86,10 @@ class RobotInterface(Node):
         while rclpy.ok():
             current_time = nsecToSec(self.get_clock().now().nanoseconds)
             if current_time - start_time > 5.0:
-                self.get_logger().error("Cannot connect to {}!".format(self.robot_ns))
+                self.get_logger().error("[Robot] Cannot connect to {}!".format(self.robot_ns))
                 break
             if self.base_odom is not None:
-                self.get_logger().info("Connected to {}!".format(self.robot_ns))
+                self.get_logger().info("[Robot] Connected to {}!".format(self.robot_ns))
                 break
             rclpy.spin_once(self, timeout_sec=0.1)
 
@@ -203,7 +203,7 @@ class RobotInterface(Node):
 
     def trajectoryNavigate(self, pos, rot):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Robot] Flight state ({}) disallows navigation".format(self.flight_state))
             return
         if pos is None:
             pos = self.getCogPos()
@@ -222,7 +222,7 @@ class RobotInterface(Node):
 
     def directNavigate(self, pos, rot, lin_vel, ang_vel):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Robot] Flight state ({}) disallows navigation".format(self.flight_state))
             return
         msg = FlightNav()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -262,7 +262,7 @@ class RobotInterface(Node):
         self, pos=None, rot=None, lin_vel=None, ang_vel=None, pos_thresh=0.1, vel_thresh=0, rot_thresh=0, timeout=-1
     ):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Robot] Flight state ({}) disallows navigation".format(self.flight_state))
             return False
         if rot is not None:
             if len(rot) == 3:
@@ -295,25 +295,31 @@ class RobotInterface(Node):
             vel_thresh = self.default_vel_thresh
         if isinstance(vel_thresh, float):
             vel_thresh = [vel_thresh] * 3
+
+        # Target state
         if target_pos is None:
             target_pos = self.getCogPos()
             pos_thresh = np.array([1e6] * 3)
             vel_thresh = np.array([1e6] * 3)
         if target_rot is None:
-            target_rot = self.getBaseRot()
+            target_rot = self.getBaseRot()  # Assume the coordinate axes of baselink are identical to those of CoG
             rot_thresh = np.array([1e6] * 3)
         if len(target_rot) == 3:
             target_rot = quaternion_from_euler(*target_rot)
+
+        # Current state
         current_pos = self.getCogPos()
         current_vel = self.getCogLinVel()
-        current_rot = self.getBaseRot()
+        current_rot = self.getBaseRot()  # Assume the coordinate axes of baselink are identical to those of CoG
+
+        # Delta state
         delta_pos = target_pos - current_pos
         delta_vel = current_vel
         delta_rot = quaternion_multiply(quaternion_inverse(current_rot), target_rot)
         delta_rot = euler_from_quaternion(delta_rot)
         self.get_logger().info_throttle(
             1.0,
-            "Pose diff: {}, rot: {}, vel: {}; target: pos: {}, rot: {}; current: pos: {}, rot: {}, vel: {}".format(
+            "[Robot] [Diff] pos: {}, rot: {}, vel: {}; [Target] pos: {}, rot: {}; [Current] pos: {}, rot: {}, vel: {}".format(
                 delta_pos, delta_rot, delta_vel, target_pos, target_rot, current_pos, current_rot, current_vel
             ),
         )
@@ -326,6 +332,7 @@ class RobotInterface(Node):
         else:
             return False
 
+    # Special rotation function for DRAGON-like robots
     def rotateCog(self, roll, pitch):
         msg = Vector3Stamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -340,7 +347,7 @@ class RobotInterface(Node):
             )
             return trans
         except Exception as e:
-            self.get_logger().error("TF lookup error: {}".format(e))
+            self.get_logger().error("[Robot] TF lookup error: {}".format(e))
             return None
 
     def getJointState(self):
@@ -348,53 +355,26 @@ class RobotInterface(Node):
 
     def setJointAngle(self, target_joint_names, target_joint_angles, thresh=0.05, timeout=-1):
         if self.flight_state != self.HOVER_STATE and self.flight_state != self.ARM_OFF_STATE:
-            self.get_logger().error("[Send Joint] Flight state ({}) disallows joint motion".format(self.flight_state))
+            self.get_logger().error(
+                "[Robot] [Send Joint] Flight state ({}) disallows joint motion".format(self.flight_state)
+            )
             return False
         if len(target_joint_names) != len(target_joint_angles):
             self.get_logger().error(
-                "[Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
+                "[Robot] [Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
                     len(target_joint_names), len(target_joint_angles)
                 )
             )
             return False
         for name in target_joint_names:
             if name not in self.joint_state.name:
-                self.get_logger().error("Set joint angle: cannot find {}".format(name))
+                self.get_logger().error("[Robot] Set joint angle: cannot find {}".format(name))
                 return False
         target_joint_state = JointState()
         target_joint_state.name = target_joint_names
         target_joint_state.position = target_joint_angles
         self.joint_ctrl_pub.publish(target_joint_state)
         return self.jointConvergenceCheck(timeout, target_joint_names, target_joint_angles, thresh)
-
-    def jointConvergenceCheck(self, timeout, target_joint_names, target_joint_angles, thresh):
-        return self.convergenceCheck(timeout, self.jointThresholdCheck, target_joint_names, target_joint_angles, thresh)
-
-    def jointThresholdCheck(self, target_joint_names, target_joint_angles, thresh):
-        if len(target_joint_names) != len(target_joint_angles):
-            self.get_logger().error(
-                "[Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
-                    len(target_joint_names), len(target_joint_angles)
-                )
-            )
-            return False
-        index_map = []
-        for name in target_joint_names:
-            try:
-                j = self.joint_state.name.index(name)
-            except ValueError:
-                self.get_logger().error("Set joint angle: cannot find {}".format(name))
-                return False
-            index_map.append(j)
-        delta_ang = []
-        for index, target_ang in zip(index_map, target_joint_angles):
-            current_ang = self.joint_state.position[index]
-            delta_ang.append(target_ang - current_ang)
-        self.get_logger().info_throttle(1.0, "Delta angle: {}".format(delta_ang))
-        if np.all(np.abs(delta_ang) < thresh):
-            return True
-        else:
-            return False
 
     def setJointTorque(self, state):
         req = SetBool.Request()
@@ -404,8 +384,39 @@ class RobotInterface(Node):
         if future.result() is not None:
             return future.result()
         else:
-            self.get_logger().error("Service call failed")
+            self.get_logger().error("[Robot] Service call failed!")
             return None
+
+    def jointConvergenceCheck(self, timeout, target_joint_names, target_joint_angles, thresh):
+        return self.convergenceCheck(timeout, self.jointThresholdCheck, target_joint_names, target_joint_angles, thresh)
+
+    def jointThresholdCheck(self, target_joint_names, target_joint_angles, thresh):
+        if len(target_joint_names) != len(target_joint_angles):
+            self.get_logger().error(
+                "[Robot] [Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
+                    len(target_joint_names), len(target_joint_angles)
+                )
+            )
+            return False
+
+        # Check whether the joint exists, and create index map
+        index_map = []
+        for name in target_joint_names:
+            try:
+                j = self.joint_state.name.index(name)
+            except ValueError:
+                self.get_logger().error("[Robot] Set joint angle: cannot find {}".format(name))
+                return False
+            index_map.append(j)
+        delta_ang = []
+        for index, target_ang in zip(index_map, target_joint_angles):
+            current_ang = self.joint_state.position[index]
+            delta_ang.append(target_ang - current_ang)
+        self.get_logger().info_throttle(1.0, "[Robot] Delta angle: {}".format(delta_ang))
+        if np.all(np.abs(delta_ang) < thresh):
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":

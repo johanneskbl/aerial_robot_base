@@ -31,7 +31,7 @@ class BaseState(smach.State):
                 self.robot.get_logger().info(message)
                 while rclpy.ok():
                     if flags["interfering"]:
-                        flags["interfering"] = False
+                        flags["interfering"] = False  # Reset for subsequent state
                         break
                     time.sleep(0.1)
 
@@ -48,10 +48,13 @@ class Start(BaseState):
         self.task_start = True
 
     def joyCallback(self, msg):
+        # Check interfering from joystick controller
         interfere_flag = False
+        # PS4 Joy Controller
         if len(msg.axes) == 14 and len(msg.buttons) == 14:
             if msg.buttons[4] == 1 and msg.buttons[5] == 1:
                 interfere_flag = True
+        # RoG1 Controller
         if len(msg.axes) == 8 and len(msg.buttons) == 11:
             if msg.buttons[4] == 1 and msg.buttons[5] == 1:
                 interfere_flag = True
@@ -84,6 +87,7 @@ class Start(BaseState):
         return "succeeded"
 
 
+# Template class to encapsulate the states for arming, takeoff and landing
 class SingleCommandState(BaseState):
     def __init__(self, robot, prefix, func, start_flight_state, target_flight_state, timeout, hold_time):
         super().__init__(robot, outcomes=["succeeded", "preempted"])
@@ -257,6 +261,7 @@ class CircleTrajectory(BaseState):
         return "succeeded"
 
 
+# Check joint angles
 class FormCheck(BaseState):
     def __init__(self, robot, prefix="form_check", joint_names=[], joint_angles=[], thresh=0.02, timeout=10.0):
         super().__init__(robot, outcomes=["succeeded", "preempted"])
@@ -283,6 +288,7 @@ class FormCheck(BaseState):
             return "preempted"
 
 
+# Transform only based on joint angles
 class Transform(BaseState):
     def __init__(
         self, robot, prefix="transform", joint_names=[], joint_trajectory=[], thresh=0.05, timeout=10.0, hold_time=2.0
@@ -326,6 +332,7 @@ class Transform(BaseState):
         return "succeeded"
 
 
+# Transform based on joint angles & pose
 class TransformWithPose(BaseState):
     def __init__(
         self,
