@@ -10,6 +10,14 @@ repos:
 
   - repo: local
     hooks:
+      # Non-ASCII
+      - id: strip-non-ascii
+        name: Strip non-ASCII / non-printable characters
+        entry: python pre-commit/strip_non_ascii.py
+        language: system
+        types: [text]
+        exclude: ^(build/|install/|log/|.jpg|.jpeg|.png|.bmp|.gif)$
+
       # C++
       - id: clang-format
         name: clang-format
@@ -37,7 +45,7 @@ repos:
         language: system
         files: \.(yaml|yml)$
 
-      # Txt
+      # TXT
       - id: capitalize-txt-comments
         name: Capitalize TXT first lines
         entry: python pre-commit/capitalize_txt_comments.py
