@@ -1,15 +1,20 @@
 name: ROS2 Build and Lint Checks
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+    types: [opened, synchronize, reopened]
 
 jobs:
   lint:
     name: Ament Build & Linters
     runs-on: ubuntu-latest
-    container: ros:humble  # Can be changed/updated
     env:
       ROS_DISTRO: humble  # Can be changed/updated
       DEBIAN_FRONTEND: noninteractive
+    container: ros:${ROS_DISTRO}
     defaults:
       run:
         shell: bash
@@ -39,7 +44,7 @@ jobs:
             rosdep init
           fi
           rosdep update
-          vcs import src < src/${{ github.event.repository.name }}/aerial_robot_${{ env.ROS_DISTRO }}.repos
+          vcs import src < src/${{ github.event.repository.name }}/aerial_robot_${ROS_DISTRO}.repos
           rosdep install -y -r \
             --from-paths src \
             --ignore-src \
@@ -56,7 +61,6 @@ jobs:
             echo "PATH=$PATH"
             echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
             echo "PYTHONPATH=$PYTHONPATH"
-            echo "ROS_DISTRO=$ROS_DISTRO"
             echo "ROS_VERSION=$ROS_VERSION"
           } >> "$GITHUB_ENV"
 
