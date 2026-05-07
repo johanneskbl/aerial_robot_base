@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 
-import math
-import numpy as np
 import time
+import numpy as np
 import rclpy
 from rclpy.node import Node
-
 import ros2_numpy as ros_np
 import tf2_ros
-from tf_transformations import *
+from tf_transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply, quaternion_inverse
 
 from aerial_robot_msgs.msg import FlightNav, PoseControlPid
 from geometry_msgs.msg import PoseStamped, Vector3Stamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Joy, JointState
-from std_msgs.msg import Empty, Int8, UInt8, String
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Empty, UInt8
 from std_srvs.srv import SetBool
 
 
@@ -29,6 +26,8 @@ class RobotInterface(Node):
     def __init__(self, robot_ns="", debug_view=False):
         super().__init__("rotor_interface")
 
+        self.robot_ns = robot_ns
+
         self.ARM_OFF_STATE = 0
         self.START_STATE = 1
         self.ARM_ON_STATE = 2
@@ -37,30 +36,26 @@ class RobotInterface(Node):
         self.HOVER_STATE = 5
         self.STOP_STATE = 6
 
-        self.debug_view = debug_view
         self.joint_state = JointState()
         self.cog_odom = None
         self.base_odom = None
         self.flight_state = None
         self.target_pos = np.array([0, 0, 0])
+        self.debug_view = debug_view
 
-        self.robot_ns = robot_ns
-
+        # Teleoperation
         self.start_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/start", 1)
         self.takeoff_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/takeoff", 1)
         self.land_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/land", 1)
         self.force_landing_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/force_landing", 1)
         self.halt_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/halt", 1)
 
-        # Odometry & Control
+        # Odometry
         self.cog_odom_sub = self.create_subscription(
             Odometry, self.robot_ns + "/uav/cog/odom", self.cogOdomCallback, 10
         )
         self.base_odom_sub = self.create_subscription(
             Odometry, self.robot_ns + "/uav/baselink/odom", self.baseOdomCallback, 10
-        )
-        self.control_pid_sub = self.create_subscription(
-            PoseControlPid, self.robot_ns + "/debug/pose/pid", self.controlPidCallback, 10
         )
 
         # Navigation
@@ -78,15 +73,20 @@ class RobotInterface(Node):
         self.joint_ctrl_pub = self.create_publisher(JointState, self.robot_ns + "/joints_ctrl", 1)
         self.set_joint_torque_client = self.create_client(SetBool, self.robot_ns + "/joints/torque_enable")
 
-        # TF
+        # Coordinate Transformation
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+        # Control
+        self.control_pid_sub = self.create_subscription(
+            PoseControlPid, self.robot_ns + "/debug/pose/pid", self.controlPidCallback, 10
+        )
 
         start_time = nsecToSec(self.get_clock().now().nanoseconds)
         while rclpy.ok():
             current_time = nsecToSec(self.get_clock().now().nanoseconds)
             if current_time - start_time > 5.0:
-                self.get_logger().error("cannot connect to {}".format(self.robot_ns))
+                self.get_logger().error("Cannot connect to {}!".format(self.robot_ns))
                 break
             if self.base_odom is not None:
                 self.get_logger().info("Connected to {}!".format(self.robot_ns))
@@ -102,9 +102,6 @@ class RobotInterface(Node):
     def flightStateCallback(self, msg):
         self.flight_state = msg.data
 
-    def controlPidCallback(self, msg):
-        self.control_pid = msg
-
     def jointStateCallback(self, msg):
         js = JointState()
         js.name = []
@@ -115,8 +112,8 @@ class RobotInterface(Node):
                 js.position.append(j)
         self.joint_state = js
 
-    def getControlPid(self):
-        return self.control_pid
+    def controlPidCallback(self, msg):
+        self.control_pid = msg
 
     def getBaseOdom(self):
         return self.base_odom
@@ -159,6 +156,9 @@ class RobotInterface(Node):
 
     def getTargetPos(self):
         return self.target_pos
+
+    def getControlPid(self):
+        return self.control_pid
 
     def start(self, sleep=1.0):
         self.start_pub.publish(Empty())
@@ -203,7 +203,7 @@ class RobotInterface(Node):
 
     def trajectoryNavigate(self, pos, rot):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigate] flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
             return
         if pos is None:
             pos = self.getCogPos()
@@ -222,7 +222,7 @@ class RobotInterface(Node):
 
     def directNavigate(self, pos, rot, lin_vel, ang_vel):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigate] flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
             return
         msg = FlightNav()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -262,7 +262,7 @@ class RobotInterface(Node):
         self, pos=None, rot=None, lin_vel=None, ang_vel=None, pos_thresh=0.1, vel_thresh=0, rot_thresh=0, timeout=-1
     ):
         if self.flight_state != self.HOVER_STATE:
-            self.get_logger().error("[Navigate] flight state ({}) disallows navigation".format(self.flight_state))
+            self.get_logger().error("[Navigation] Flight state ({}) disallows navigation".format(self.flight_state))
             return False
         if rot is not None:
             if len(rot) == 3:
@@ -313,7 +313,7 @@ class RobotInterface(Node):
         delta_rot = euler_from_quaternion(delta_rot)
         self.get_logger().info_throttle(
             1.0,
-            "pose diff: {}, rot: {}, vel: {}; target: pos: {}, rot: {}; current: pos: {}, rot: {}, vel: {}".format(
+            "Pose diff: {}, rot: {}, vel: {}; target: pos: {}, rot: {}; current: pos: {}, rot: {}, vel: {}".format(
                 delta_pos, delta_rot, delta_vel, target_pos, target_rot, current_pos, current_rot, current_vel
             ),
         )
@@ -348,18 +348,18 @@ class RobotInterface(Node):
 
     def setJointAngle(self, target_joint_names, target_joint_angles, thresh=0.05, timeout=-1):
         if self.flight_state != self.HOVER_STATE and self.flight_state != self.ARM_OFF_STATE:
-            self.get_logger().error("[Send Joint] flight state ({}) disallows joint motion".format(self.flight_state))
+            self.get_logger().error("[Send Joint] Flight state ({}) disallows joint motion".format(self.flight_state))
             return False
         if len(target_joint_names) != len(target_joint_angles):
             self.get_logger().error(
-                "[Send Joint] sizes of joint names ({}) and angles ({}) do not match".format(
+                "[Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
                     len(target_joint_names), len(target_joint_angles)
                 )
             )
             return False
         for name in target_joint_names:
             if name not in self.joint_state.name:
-                self.get_logger().error("set joint angle: cannot find {}".format(name))
+                self.get_logger().error("Set joint angle: cannot find {}".format(name))
                 return False
         target_joint_state = JointState()
         target_joint_state.name = target_joint_names
@@ -373,7 +373,7 @@ class RobotInterface(Node):
     def jointThresholdCheck(self, target_joint_names, target_joint_angles, thresh):
         if len(target_joint_names) != len(target_joint_angles):
             self.get_logger().error(
-                "[Send Joint] sizes of joint names ({}) and angles ({}) do not match".format(
+                "[Send Joint] Sizes of joint names ({}) and angles ({}) do not match".format(
                     len(target_joint_names), len(target_joint_angles)
                 )
             )
@@ -383,14 +383,14 @@ class RobotInterface(Node):
             try:
                 j = self.joint_state.name.index(name)
             except ValueError:
-                self.get_logger().error("set joint angle: cannot find {}".format(name))
+                self.get_logger().error("Set joint angle: cannot find {}".format(name))
                 return False
             index_map.append(j)
         delta_ang = []
         for index, target_ang in zip(index_map, target_joint_angles):
             current_ang = self.joint_state.position[index]
             delta_ang.append(target_ang - current_ang)
-        self.get_logger().info_throttle(1.0, "delta angle: {}".format(delta_ang))
+        self.get_logger().info_throttle(1.0, "Delta angle: {}".format(delta_ang))
         if np.all(np.abs(delta_ang) < thresh):
             return True
         else:

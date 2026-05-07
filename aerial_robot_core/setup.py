@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+
 from setuptools import setup
 import os
-from glob import glob
 
 package_name = "aerial_robot_core"
 

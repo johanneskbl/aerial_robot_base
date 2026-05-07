@@ -1,22 +1,20 @@
 cmake_minimum_required(VERSION 3.5)
 project(aerial_robot_core)
 
-# C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(aerial_robot_model REQUIRED)
-find_package(aerial_robot_estimation REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(aerial_robot_model REQUIRED)
+find_package(aerial_robot_estimation REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp
 )
-
 
 add_executable(aerial_robot_core_node
   src/aerial_robot_core_node.cpp

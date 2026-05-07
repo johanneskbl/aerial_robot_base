@@ -32,21 +32,20 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "aerial_robot_core/aerial_robot_core.h"
 
-#include <chrono>
-#include <functional>
+#include "aerial_robot_core/aerial_robot_core.h"
 
 using namespace std::chrono_literals;
 
 AerialRobotCore::AerialRobotCore(rclcpp::Node::SharedPtr node) : node_(node)
 {
-  // Get parameters
+  // Get parameters from launch file
   bool param_verbose;
   node_->get_parameter_or("param_verbose", param_verbose, false);
   double main_rate;
   node_->get_parameter_or("main_rate", main_rate, 1.0);
 
+  // Model
   robot_model_ros_ = std::make_shared<aerial_robot_model::RobotModelRos>(node_);
   auto robot_model = robot_model_ros_->getRobotModel();
 
@@ -56,27 +55,26 @@ AerialRobotCore::AerialRobotCore(rclcpp::Node::SharedPtr node) : node_(node)
 
   if (param_verbose)
   {
-    RCLCPP_INFO(node_->get_logger(), "%s: main_rate is %f", node_->get_namespace(), main_rate);
+    RCLCPP_INFO(node_->get_logger(), "[Core] %s: main_rate is %f", node_->get_namespace(), main_rate);
   }
 
   if (main_rate <= 0.0)
   {
-    RCLCPP_ERROR(node_->get_logger(), "main rate is negative or zero, cannot run the main timer");
-  }
-  else
-  {
-    // Create timer
-    auto period = std::chrono::duration<double>(1.0 / main_rate);
-    main_timer_ = rclcpp::create_timer(node_, node_->get_clock(), period, std::bind(&AerialRobotCore::mainFunc, this));
+    RCLCPP_ERROR(node_->get_logger(), "[Core] Main rate is zero or negative!");
+    return;
   }
 
-  // // for debug
+  // Create timer
+  auto period = std::chrono::duration<double>(1.0 / main_rate);
+  main_timer_ = rclcpp::create_timer(node_, node_->get_clock(), period, std::bind(&AerialRobotCore::mainFunc, this));
+
+  // Debug publisher
   // debug_pub_ = node_->create_publisher<std_msgs::msg::String>("debug_topic", 10);
 }
 
 AerialRobotCore::~AerialRobotCore()
 {
-  // We don't need any stop process since they are sopped automatically
+  // We don't need any stop processes since they are stopped automatically
 }
 
 void AerialRobotCore::mainFunc()

@@ -7,22 +7,23 @@ import select
 import termios
 import tty
 import time
-
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty
+
 from aerial_robot_msgs.msg import FlightNav
+
 
 msg_text = """
 Instruction:
 
 ---------------------------
 
-r:  arming motor (please do before takeoff)
-t:  takeoff
-l:  land
-f:  force landing
-h:  halt (force stop motor)
+r:  Arm motors (before takeoff)
+t:  Takeoff
+l:  Land
+f:  Force landing
+h:  Halt (force stop motors)
 
      q           w           e           [
 (turn left)  (forward)  (turn right)  (move up)
@@ -31,8 +32,9 @@ h:  halt (force stop motor)
 (move left)  (backward) (move right) (move down)
 
 
-Please don't have caps lock on.
-CTRL+c to quit
+Avoid caps-lock.
+CTRL+c to quit.
+
 ---------------------------
 """
 
@@ -74,7 +76,7 @@ class KeyboardCommandNode(Node):
         self.yaw_vel = self.get_parameter("yaw_vel").value
 
     def run(self):
-        self.get_logger().info("Keyboard Command Node started")
+        self.get_logger().info("[Teleoperation] Keyboard Command Node started")
         print(msg_text)
         while rclpy.ok():
             nav_msg = FlightNav()
@@ -86,63 +88,63 @@ class KeyboardCommandNode(Node):
 
             if key == "l":
                 self.land_pub.publish(Empty())
-                output = "sent land command"
+                output = "[Keyboard] Sent land command!"
             elif key == "r":
                 self.start_pub.publish(Empty())
-                output = "sent motor-arming command"
+                output = "[Keyboard] Sent motor-arming command!"
             elif key == "h":
                 self.halt_pub.publish(Empty())
-                output = "sent motor-disarming (halt) command"
+                output = "[Keyboard] Sent halt command!"
             elif key == "f":
                 self.force_landing_pub.publish(Empty())
-                output = "sent force landing command"
+                output = "[Keyboard] Sent force landing command!"
             elif key == "t":
                 self.takeoff_pub.publish(Empty())
-                output = "sent takeoff command"
+                output = "[Keyboard] Sent takeoff command!"
             elif key == "x":
                 self.motion_start_pub.publish(Empty())
-                output = "sent task-start command"
+                output = "[Keyboard] Sent task-start command"
             elif key == "w":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_x = self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent +x vel command"
+                output = "[Keyboard] Sent +x vel command"
             elif key == "s":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_x = -self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent -x vel command"
+                output = "[Keyboard] Sent -x vel command"
             elif key == "a":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_y = self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent +y vel command"
+                output = "[Keyboard] Sent +y vel command"
             elif key == "d":
                 nav_msg.pos_xy_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_y = -self.xy_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent -y vel command"
+                output = "[Keyboard] Sent -y vel command"
             elif key == "q":
                 nav_msg.yaw_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_omega_z = self.yaw_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent +yaw vel command"
+                output = "[Keyboard] Sent +yaw vel command"
             elif key == "e":
                 nav_msg.yaw_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_omega_z = -self.yaw_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent -yaw vel command"
+                output = "[Keyboard] Sent -yaw vel command"
             elif key == "[":
                 nav_msg.pos_z_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_z = self.z_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent +z vel command"
+                output = "[Keyboard] Sent +z vel command"
             elif key == "]":
                 nav_msg.pos_z_nav_mode = FlightNav.VEL_MODE
                 nav_msg.target_vel_z = -self.z_vel
                 self.nav_pub.publish(nav_msg)
-                output = "sent -z vel command"
-            elif key == "\x03":  # Ctrl+C
+                output = "[Keyboard] Sent -z vel command"
+            elif key == "\x03":  # CTRL+c
                 break
 
             printMsg(output)

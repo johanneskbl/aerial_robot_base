@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 
@@ -7,11 +6,11 @@ import rclpy
 import smach
 import smach_ros
 
-from aerial_robot_core.robot_interface import RobotInterface
-from aerial_robot_core.state_machine import Start, Arm, Takeoff, WayPoint, CircleTrajectory, Land
+from robot_interface import RobotInterface
+from state_machine import Start, Arm, Takeoff, WayPoint, CircleTrajectory, Land
 
 
-class SimpleDemo:
+class FlightDemo:
     def __init__(self):
         self.robot = RobotInterface(robot_ns="")
 
@@ -67,7 +66,7 @@ class SimpleDemo:
 
 def main(args=None):
     rclpy.init(args=args)
-    demo = SimpleDemo()
+    demo = FlightDemo()
     rclpy.shutdown()
 
 

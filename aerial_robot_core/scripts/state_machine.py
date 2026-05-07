@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 
 import time
-import smach
-import smach_ros
 import numpy as np
-import json
 import rclpy
+import smach
 
-from aerial_robot_core.robot_interface import RobotInterface
 from std_msgs.msg import Empty
 from sensor_msgs.msg import Joy
 
@@ -31,7 +27,7 @@ class BaseState(smach.State):
             if not flags["interfere_mode"]:
                 time.sleep(t)
             else:
-                message = '\n\n Please press "L1" and "R1" simultaneously to proceed the state \n'
+                message = '\n\n [SMACH] Please press "L1" and "R1" simultaneously to proceed the state \n'
                 self.robot.get_logger().info(message)
                 while rclpy.ok():
                     if flags["interfering"]:
@@ -40,7 +36,6 @@ class BaseState(smach.State):
                     time.sleep(0.1)
 
 
-# Start
 class Start(BaseState):
     def __init__(self, robot):
         super().__init__(robot, outcomes=["succeeded", "preempted"])
@@ -61,35 +56,34 @@ class Start(BaseState):
             if msg.buttons[4] == 1 and msg.buttons[5] == 1:
                 interfere_flag = True
         if interfere_flag and not self.flags["interfere_mode"]:
-            self.robot.get_logger().info("Enter interfere mode")
+            self.robot.get_logger().info("[SMACH] Enter interfere mode")
             self.flags["interfere_mode"] = True
         self.flags["interfering"] = interfere_flag
 
     def execute(self, userdata):
         message = (
-            "\n\n  Please run the following command to start the state machine: \n"
-            "  \"$ ros2 topic pub -1 /task_start std_msgs/msg/Empty '{}'\" \n \n"
-            '  Or press "L1" and "R1" simultaneously to enter interfere mode, \n'
-            "  which enables manual progression via a controller (e.g., PS4).\n"
+            "\n\n [SMACH] Please run the following command to start the state machine: \n"
+            "         \"$ ros2 topic pub -1 /task_start std_msgs/msg/Empty '{}'\" \n \n"
+            '         Or press "L1" and "R1" simultaneously to enter interfere mode, \n'
+            "         which enables manual progression via a controller (e.g., PS4).\n"
         )
         self.robot.get_logger().info(message)
         userdata.flags = self.flags
         while not self.task_start:
             rclpy.spin_once(self.robot, timeout_sec=0.01)
             time.sleep(0.1)
-            self.robot.get_logger().debug("wait to start task")
+            self.robot.get_logger().debug("Wait to start task...")
             if userdata.flags["interfere_mode"]:
-                self.robot.get_logger().info(self.__class__.__name__ + ": enter interference mode")
+                self.robot.get_logger().info("[SMACH] {}: enter interference mode".format(self.__class__.__name__))
                 userdata.flags["interfering"] = False
                 break
             if not rclpy.ok():
-                self.robot.get_logger().error("ROS shutdown")
+                self.robot.get_logger().error("[SMACH] ROS shutdown")
                 return "preempted"
-        self.robot.get_logger().info("start task")
+        self.robot.get_logger().info("[SMACH] Start task")
         return "succeeded"
 
 
-# SingleCommandState
 class SingleCommandState(BaseState):
     def __init__(self, robot, prefix, func, start_flight_state, target_flight_state, timeout, hold_time):
         super().__init__(robot, outcomes=["succeeded", "preempted"])
@@ -103,25 +97,27 @@ class SingleCommandState(BaseState):
     def execute(self, userdata):
         if self.robot.getFlightState() != self.start_flight_state:
             self.robot.get_logger().warning(
-                "{}: robot state ({}) is not the required start state ({}). preempted!".format(
+                "[SMACH] {}: robot state ({}) is not the required start state ({}). preempted!".format(
                     self.__class__.__name__, self.robot.getFlightState(), self.start_flight_state
                 )
             )
             return "preempted"
-        self.robot.get_logger().info("{}: start {}".format(self.__class__.__name__, self.prefix))
+        self.robot.get_logger().info("[SMACH] {}: start {}".format(self.__class__.__name__, self.prefix))
         self.func()
         start_t = nsecToSec(self.robot.get_clock().now().nanoseconds)
         while nsecToSec(self.robot.get_clock().now().nanoseconds) < start_t + self.timeout:
             if self.robot.getFlightState() == self.target_flight_state:
-                self.robot.get_logger().info("{}: robot succeeded to {}!".format(self.__class__.__name__, self.prefix))
+                self.robot.get_logger().info(
+                    "[SMACH] {}: robot succeeded to {}!".format(self.__class__.__name__, self.prefix)
+                )
                 self.hold(self.hold_time, userdata.flags)
                 return "succeeded"
             if not rclpy.ok():
-                self.robot.get_logger().error("ROS shutdown during state execution")
+                self.robot.get_logger().error("[SMACH] ROS shutdown during state execution")
                 return "preempted"
             time.sleep(0.1)
         self.robot.get_logger().warning(
-            "{}: timeout ({} sec). preempted!".format(self.__class__.__name__, self.timeout)
+            "[SMACH] {}: timeout ({} sec). preempted!".format(self.__class__.__name__, self.timeout)
         )
         return "preempted"
 
@@ -132,7 +128,7 @@ class Arm(SingleCommandState):
 
     def execute(self, userdata):
         if self.robot.getFlightState() == self.robot.HOVER_STATE:
-            self.robot.get_logger().info(self.__class__.__name__ + ": robot already hovers, skip")
+            self.robot.get_logger().info("[SMACH] {}: robot already hovers, skip".format(self.__class__.__name__))
             return "succeeded"
         return super().execute(userdata)
 
@@ -143,7 +139,7 @@ class Takeoff(SingleCommandState):
 
     def execute(self, userdata):
         if self.robot.getFlightState() == self.robot.HOVER_STATE:
-            self.robot.get_logger().info(self.__class__.__name__ + ": robot already hovers, skip")
+            self.robot.get_logger().info("[SMACH] {}: robot already hovers, skip".format(self.__class__.__name__))
             return "succeeded"
         return super().execute(userdata)
 
@@ -153,7 +149,6 @@ class Land(SingleCommandState):
         super().__init__(robot, "land", robot.land, robot.HOVER_STATE, robot.ARM_OFF_STATE, 20.0, 0)
 
 
-# WayPoint
 class WayPoint(BaseState):
     def __init__(self, robot, prefix="waypoint", waypoints=[], timeout=30.0, hold_time=1.0):
         super().__init__(robot, outcomes=["succeeded", "preempted"])
@@ -167,13 +162,15 @@ class WayPoint(BaseState):
     def execute(self, userdata):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
-                "{}: robot state ({}) is not HOVER_STATE. preempted!".format(
+                "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
                     self.__class__.__name__, self.robot.getFlightState()
                 )
             )
             return "preempted"
         if len(self.waypoints) == 0:
-            self.robot.get_logger().warning("{}: waypoints are empty. preempted".format(self.__class__.__name__))
+            self.robot.get_logger().warning(
+                "[SMACH] {}: waypoints are empty. preempted".format(self.__class__.__name__)
+            )
             return "preempted"
         for i, waypoint in enumerate(self.waypoints):
             if len(waypoint) == 3:
@@ -191,19 +188,19 @@ class WayPoint(BaseState):
                 )
             else:
                 self.robot.get_logger().warning(
-                    "{}: waypoint {} format unsupported (length must be 3 or 4). preempted!".format(
+                    "[SMACH] {}: waypoint {} format unsupported (length must be 3 or 4). preempted!".format(
                         self.__class__.__name__, waypoint
                     )
                 )
                 return "preempted"
             if ret:
                 self.robot.get_logger().info(
-                    "{}: reached {}th waypoint [{}]".format(self.__class__.__name__, i + 1, waypoint)
+                    "[SMACH] {}: reached {}th waypoint [{}]".format(self.__class__.__name__, i + 1, waypoint)
                 )
                 self.hold(self.hold_time, userdata.flags)
             else:
                 self.robot.get_logger().warning(
-                    "{}: failed to reach waypoint {}. preempted".format(self.__class__.__name__, waypoint)
+                    "[SMACH] {}: failed to reach waypoint {}. preempted".format(self.__class__.__name__, waypoint)
                 )
                 return "preempted"
         return "succeeded"
@@ -229,12 +226,12 @@ class CircleTrajectory(BaseState):
         center_pos_y = current_pos[1] - np.sin(self.init_theta) * self.radius
         center_pos_z = current_pos[2]
         init_yaw = self.robot.getCogRPY()[2]
-        self.robot.get_logger().info("Center position is: [{:.2f}, {:.2f}]".format(center_pos_x, center_pos_y))
+        self.robot.get_logger().info("[SMACH] Center position is: [{:.2f}, {:.2f}]".format(center_pos_x, center_pos_y))
         loop = 0
         cnt = 0
         while loop < self.loop:
             if self.robot.getFlightState() != self.robot.HOVER_STATE:
-                self.robot.get_logger().error("[CircleTrajectory] robot not hovering, preempted!")
+                self.robot.get_logger().error("[SMACH] CircleTrajectory: robot not hovering, preempted!")
                 return "preempted"
             theta = self.init_theta + cnt * self.nav_period * self.omega
             pos_x = center_pos_x + np.cos(theta) * self.radius
@@ -274,14 +271,14 @@ class FormCheck(BaseState):
         )
         if ret:
             self.robot.get_logger().info(
-                "{}: converged to target joints {}: {} successfully!".format(
+                "[SMACH] {}: converged to target joints {}: {} successfully!".format(
                     self.__class__.__name__, self.target_joint_names, self.target_joint_angles
                 )
             )
             return "succeeded"
         else:
             self.robot.get_logger().warning(
-                "{}: timeout ({} sec). preempted!".format(self.__class__.__name__, self.timeout)
+                "[SMACH] {}: timeout ({} sec). preempted!".format(self.__class__.__name__, self.timeout)
             )
             return "preempted"
 
@@ -300,26 +297,28 @@ class Transform(BaseState):
     def execute(self, userdata):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
-                "{}: robot state ({}) is not HOVER_STATE. preempted!".format(
+                "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
                     self.__class__.__name__, self.robot.getFlightState()
                 )
             )
             return "preempted"
         if len(self.target_joint_trajectory) == 0:
-            self.robot.get_logger().warning("{}: joint trajectory empty. preempted".format(self.__class__.__name__))
+            self.robot.get_logger().warning(
+                "[SMACH] {}: joint trajectory empty. preempted".format(self.__class__.__name__)
+            )
             return "preempted"
         for i, target_angles in enumerate(self.target_joint_trajectory):
             ret = self.robot.setJointAngle(self.target_joint_names, target_angles, self.thresh, self.timeout)
             if ret:
                 self.robot.get_logger().info(
-                    "{}: converged to {}th target joints {}: {} successfully!".format(
+                    "[SMACH] {}: converged to {}th target joints {}: {} successfully!".format(
                         self.__class__.__name__, i + 1, self.target_joint_names, target_angles
                     )
                 )
                 self.hold(self.hold_time, userdata.flags)
             else:
                 self.robot.get_logger().warning(
-                    "{}: timeout ({} sec), failed to reach {}th target joints. preempted!".format(
+                    "[SMACH] {}: timeout ({} sec), failed to reach {}th target joints. preempted!".format(
                         self.__class__.__name__, self.timeout, i + 1
                     )
                 )
@@ -358,20 +357,22 @@ class TransformWithPose(BaseState):
     def execute(self, userdata):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
-                "{}: robot state ({}) is not HOVER_STATE. preempted!".format(
+                "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
                     self.__class__.__name__, self.robot.getFlightState()
                 )
             )
             return "preempted"
         if len(self.target_joint_trajectory) == 0:
-            self.robot.get_logger().warning("{}: joint trajectory empty. preempted".format(self.__class__.__name__))
+            self.robot.get_logger().warning(
+                "[SMACH] {}: joint trajectory empty. preempted".format(self.__class__.__name__)
+            )
             return "preempted"
         for i, target_angles in enumerate(self.target_joint_trajectory):
             target_pos = None
             if len(self.target_pos_trajectory) > 0:
                 if len(self.target_pos_trajectory) != len(self.target_joint_trajectory):
                     self.robot.get_logger().warning(
-                        "{}: pos trajectory size mismatch. preempted!".format(self.__class__.__name__)
+                        "[SMACH] {}: pos trajectory size mismatch. preempted!".format(self.__class__.__name__)
                     )
                     return "preempted"
                 target_pos = self.target_pos_trajectory[i]
@@ -380,14 +381,14 @@ class TransformWithPose(BaseState):
             if len(self.target_rot_trajectory) > 0:
                 if len(self.target_rot_trajectory) != len(self.target_joint_trajectory):
                     self.robot.get_logger().warning(
-                        "{}: rot trajectory size mismatch. preempted!".format(self.__class__.__name__)
+                        "[SMACH] {}: rot trajectory size mismatch. preempted!".format(self.__class__.__name__)
                     )
                     return "preempted"
                 target_rot = self.target_rot_trajectory[i]
                 if self.rotate_cog:
                     if not (2 <= len(target_rot) <= 3):
                         self.robot.get_logger().warning(
-                            "{}: target rot size must be 2 or 3 for cog rotate mode. preempted!".format(
+                            "[SMACH] {}: target rot size must be 2 or 3 for cog rotate mode. preempted!".format(
                                 self.__class__.__name__
                             )
                         )
@@ -402,20 +403,20 @@ class TransformWithPose(BaseState):
                     self.robot.rotate(target_rot, timeout=0)
             start_time = nsecToSec(self.robot.get_clock().now().nanoseconds)
             self.robot.get_logger().info(
-                "{}: starting joint motion {} with pose [{}, {}]".format(
+                "[SMACH] {}: starting joint motion {} with pose [{}, {}]".format(
                     self.__class__.__name__, target_angles, target_pos, target_rot
                 )
             )
             ret = self.robot.setJointAngle(self.target_joint_names, target_angles, self.joint_thresh, self.timeout)
             if ret:
                 self.robot.get_logger().info(
-                    "{}: converged to {}th target joints {}: {} successfully!".format(
+                    "[SMACH] {}: converged to {}th target joints {}: {} successfully!".format(
                         self.__class__.__name__, i + 1, self.target_joint_names, target_angles
                     )
                 )
             else:
                 self.robot.get_logger().warning(
-                    "{}: timeout ({} sec), failed to reach {}th target joints. preempted!".format(
+                    "[SMACH] {}: timeout ({} sec), failed to reach {}th target joints. preempted!".format(
                         self.__class__.__name__, self.timeout, i + 1
                     )
                 )
@@ -427,13 +428,13 @@ class TransformWithPose(BaseState):
             )
             if not ret:
                 self.robot.get_logger().warning(
-                    "{}: timeout ({} sec), failed to converge to {}th target pose. preempted!".format(
+                    "[SMACH] {}: timeout ({} sec), failed to converge to {}th target pose. preempted!".format(
                         self.__class__.__name__, self.timeout, i + 1
                     )
                 )
                 return "preempted"
             self.robot.get_logger().info(
-                "{}: converged to {}th target pose {}: [{}, {}] successfully!".format(
+                "[SMACH] {}: converged to {}th target pose {}: [{}, {}] successfully!".format(
                     self.__class__.__name__, i + 1, self.target_joint_names, target_pos, target_rot
                 )
             )
