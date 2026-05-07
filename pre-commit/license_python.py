@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+
 """license_python.py
 
 Pre-commit hook that ensures a short SPDX license header is present in Python
@@ -48,6 +51,39 @@ def _read_license_file() -> str:
 def _has_license_header(source: str) -> bool:
     head = source[:8000]
     return all(needle in head for needle in _SIGNATURE_NEEDLES)
+
+
+def _is_spdx_identifier_line(line: str) -> bool:
+    return line.startswith("# SPDX-License-Identifier:")
+
+
+def _is_dragon_copyright_line(line: str) -> bool:
+    # Keep this narrow so we don't rewrite unrelated copyright notices.
+    return line.startswith("# Copyright") and ("DRAGON Laboratory, The University of Tokyo" in line)
+
+
+def _find_spdx_header_in_rest(rest_lines: list[str]) -> tuple[int, int] | None:
+    """Return (start_idx, end_idx_exclusive) for an SPDX header at top of rest.
+
+    Searches only near the top to avoid false positives deeper in the file.
+    Allows a few leading blank lines before the header.
+    """
+
+    i = 0
+    while i < len(rest_lines) and rest_lines[i].strip() == "":
+        i += 1
+
+    # Look only at the first handful of lines after initial blanks.
+    limit = min(len(rest_lines), i + 20)
+    for j in range(i, limit):
+        if _is_spdx_identifier_line(rest_lines[j]):
+            start = j
+            end = j + 1
+            if end < len(rest_lines) and _is_dragon_copyright_line(rest_lines[end]):
+                end += 1
+            return start, end
+
+    return None
 
 
 def _parse_spdx_license_identifier(license_text: str) -> str:
@@ -120,18 +156,37 @@ def _apply_to_source(source: str, header_text: str) -> str:
     bom = ""
     if source.startswith("\ufeff"):
         bom = "\ufeff"
-        source = source.lstrip("\ufeff")
-
-    if _has_license_header(source):
-        return bom + source
+        source = source[1:]
 
     source = source.replace("\r\n", "\n").replace("\r", "\n")
     lines = source.split("\n")
 
     preamble, rest = _split_python_preamble(lines)
-    header = header_text
-    if not header.endswith("\n"):
-        header += "\n"
+    header_lines = header_text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    # Drop any trailing empty lines; we'll control blank-line spacing explicitly.
+    while header_lines and header_lines[-1] == "":
+        header_lines.pop()
+    header_lines = [ln for ln in header_lines if ln != ""]
+    if not header_lines:
+        # Should never happen, but fail safe.
+        return bom + source.rstrip("\n") + "\n"
+
+    # Update in-place if an SPDX header already exists near the top of the file,
+    # otherwise insert it right after the preamble.
+    header_span = _find_spdx_header_in_rest(rest)
+    if header_span is not None:
+        start, end = header_span
+        rest = rest[:start] + header_lines + rest[end:]
+        # Ensure exactly one blank line after the header block.
+        k = start + len(header_lines)
+        while k < len(rest) and rest[k].strip() == "":
+            del rest[k]
+        rest.insert(k, "")
+    else:
+        # Strip leading blanks so we don't accumulate spacing before/after header.
+        while rest and rest[0].strip() == "":
+            rest.pop(0)
+        rest = header_lines + [""] + rest
 
     # If file is empty (or only preamble), ensure we don't create extra leading
     # blank lines beyond the standard header separator.
@@ -139,7 +194,6 @@ def _apply_to_source(source: str, header_text: str) -> str:
     if rebuilt and not rebuilt.endswith("\n"):
         rebuilt += "\n"
 
-    rebuilt += header
     rebuilt += "\n".join(rest)
 
     # `split("\n")` drops the final newline information; normalize to one.
