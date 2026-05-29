@@ -68,7 +68,7 @@ add_library(spinal_math
   ${SPINAL_DIRS}/math/vector2.cpp
   ${SPINAL_DIRS}/math/vector3.cpp
   ${SPINAL_DIRS}/math/quaternion.cpp
-  # ${SPINAL_DIRS}/math/location.cpp
+  ${SPINAL_DIRS}/math/location.cpp
   )
 
 

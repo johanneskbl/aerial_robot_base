@@ -100,10 +100,13 @@ target_include_directories(aerial_robot_model_ros
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
-rosidl_target_interfaces(aerial_robot_model_ros
+rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME}
   "rosidl_typesupport_cpp"
-)  
+)
+target_link_libraries(aerial_robot_model_ros
+  "${cpp_typesupport_target}"
+)
 
 # --- robot_model plugin ----------------------------------------
 add_library(robot_model_plugin SHARED
