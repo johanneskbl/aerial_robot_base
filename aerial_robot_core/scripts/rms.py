@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 import sys
 import select
 import termios
@@ -27,7 +26,7 @@ class RMSNode(Node):
         self.pose_squared_errors_sum = [0.0] * 6
         self.pose_cnt = 0
 
-    def callback(self, data):
+    def callback(self, data: PoseControlPid):
         if self.start_flag:
             self.pose_cnt += 1
             self.pose_squared_errors_sum[0] += data.x.err_p * data.x.err_p
@@ -67,13 +66,14 @@ if __name__ == "__main__":
                 if node.pose_cnt > 0:
                     rms = [math.sqrt(val / node.pose_cnt) for val in node.pose_squared_errors_sum]
                 node.get_logger().info(
-                    "[RMS] Position errors: [%f, %f, %f], attitude errors: [%f, %f, %f]",
-                    rms[0],
-                    rms[1],
-                    rms[2],
-                    rms[3],
-                    rms[4],
-                    rms[5],
+                    "[RMS] Position errors: [{:.3f}, {:.3f}, {:.3f}], attitude errors: [{:.3f}, {:.3f}, {:.3f}]".format(
+                        rms[0],
+                        rms[1],
+                        rms[2],
+                        rms[3],
+                        rms[4],
+                        rms[5],
+                    )
                 )
                 node.start_flag = False
                 node.pose_cnt = 0

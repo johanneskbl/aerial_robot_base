@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 import time
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
+from rclpy.time import Time
 import ros2_numpy as ros_np
 import tf2_ros
 from tf_transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply, quaternion_inverse
@@ -27,6 +28,8 @@ class RobotInterface(Node):
         super().__init__("rotor_interface")
 
         self.robot_ns = robot_ns
+        if not self.robot_ns:
+            self.robot_ns = self._detect_namespace()
 
         self.ARM_OFF_STATE = 0
         self.START_STATE = 1
@@ -37,11 +40,19 @@ class RobotInterface(Node):
         self.STOP_STATE = 6
 
         self.joint_state = JointState()
-        self.cog_odom = None
-        self.base_odom = None
+        self.cog_odom = Odometry()
+        self.base_odom = Odometry()
         self.flight_state = None
         self.target_pos = np.array([0, 0, 0])
         self.debug_view = debug_view
+
+        self.declare_parameter("default_pos_thresh", [0.1, 0.1, 0.1])
+        self.declare_parameter("default_rot_thresh", [0.05, 0.05, 0.05])
+        self.declare_parameter("default_vel_thresh", [0.05, 0.05, 0.05])
+
+        self.default_pos_thresh = self.get_parameter("default_pos_thresh").value  # M
+        self.default_rot_thresh = self.get_parameter("default_rot_thresh").value  # Rad
+        self.default_vel_thresh = self.get_parameter("default_vel_thresh").value  # M/s
 
         # Teleoperation
         self.start_pub = self.create_publisher(Empty, self.robot_ns + "/teleop_command/start", 1)
@@ -209,6 +220,9 @@ class RobotInterface(Node):
             pos = self.getCogPos()
         if rot is None:
             rot = self.getCogRot()
+        if pos is None or rot is None:
+            self.get_logger().error("[Robot] Failed to get current pose for trajectory navigation")
+            return
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.pose.position.x = pos[0]
@@ -240,6 +254,10 @@ class RobotInterface(Node):
             pos = self.getCogPos()
         if rot is None:
             rot = self.getCogRot()
+        if pos is None or rot is None:
+            self.get_logger().error("[Robot] Failed to get current pose for trajectory navigation")
+            return
+
         _, _, yaw = euler_from_quaternion(rot)
         if lin_vel is None:
             lin_vel = np.array([0, 0, 0])
@@ -259,7 +277,7 @@ class RobotInterface(Node):
         self.direct_nav_pub.publish(msg)
 
     def navigate(
-        self, pos=None, rot=None, lin_vel=None, ang_vel=None, pos_thresh=0.1, vel_thresh=0, rot_thresh=0, timeout=-1
+        self, pos=None, rot=None, lin_vel=None, ang_vel=None, pos_thresh=0.1, vel_thresh=0.0, rot_thresh=0.0, timeout=-1
     ):
         if self.flight_state != self.HOVER_STATE:
             self.get_logger().error("[Robot] Flight state ({}) disallows navigation".format(self.flight_state))
@@ -274,6 +292,39 @@ class RobotInterface(Node):
         return self.poseConvergenceCheck(
             timeout, target_pos=pos, target_rot=rot, pos_thresh=pos_thresh, vel_thresh=vel_thresh, rot_thresh=rot_thresh
         )
+
+    def convergenceCheck(self, timeout, func, *args, **kwargs):
+        # if timeout is -1, it means no time constraint
+        if timeout < 0:
+            return True
+
+        # Check convergence
+        start_time = self.get_clock().now()
+        sleep_rate = self.create_rate(10)
+
+        while rclpy.ok():
+            if self.flight_state != self.HOVER_STATE and self.flight_state != self.ARM_OFF_STATE:
+                self.get_logger().warning(
+                    "[{}]: preempt because current flight state({}) allows no more motion".format(
+                        func.__name__, self.flight_state
+                    )
+                )
+                return False
+
+            ret = func(*args, **kwargs)
+
+            if ret:
+                self.get_logger().info("[{}]: convergence".format(func.__name__))
+                return True
+
+            elapsed_time = (self.get_clock().now() - start_time).nanoseconds / 1e9
+            if elapsed_time > timeout:
+                self.get_logger().warning("[{}]: timeout, cannot convergence".format(func.__name__))
+                return False
+
+            sleep_rate.sleep()
+
+        return False
 
     def poseConvergenceCheck(
         self, timeout, target_pos=None, target_rot=None, pos_thresh=None, vel_thresh=None, rot_thresh=None
@@ -304,6 +355,9 @@ class RobotInterface(Node):
         if target_rot is None:
             target_rot = self.getBaseRot()  # Assume the coordinate axes of baselink are identical to those of CoG
             rot_thresh = np.array([1e6] * 3)
+        if target_pos is None or target_rot is None:
+            self.get_logger().error("[Robot] Failed to get current pose for convergence check")
+            return False
         if len(target_rot) == 3:
             target_rot = quaternion_from_euler(*target_rot)
 
@@ -311,17 +365,19 @@ class RobotInterface(Node):
         current_pos = self.getCogPos()
         current_vel = self.getCogLinVel()
         current_rot = self.getBaseRot()  # Assume the coordinate axes of baselink are identical to those of CoG
+        if current_pos is None or current_vel is None or current_rot is None:
+            self.get_logger().error("[Robot] Failed to get current pose for convergence check")
+            return False
 
         # Delta state
         delta_pos = target_pos - current_pos
         delta_vel = current_vel
         delta_rot = quaternion_multiply(quaternion_inverse(current_rot), target_rot)
         delta_rot = euler_from_quaternion(delta_rot)
-        self.get_logger().info_throttle(
-            1.0,
+        self.get_logger().info(
             "[Robot] [Diff] pos: {}, rot: {}, vel: {}; [Target] pos: {}, rot: {}; [Current] pos: {}, rot: {}, vel: {}".format(
                 delta_pos, delta_rot, delta_vel, target_pos, target_rot, current_pos, current_rot, current_vel
-            ),
+            )
         )
         if (
             np.all(np.abs(delta_pos) < pos_thresh)
@@ -343,7 +399,7 @@ class RobotInterface(Node):
     def getTF(self, frame_id, wait=0.5, parent_frame_id="world"):
         try:
             trans = self.tf_buffer.lookup_transform(
-                parent_frame_id, frame_id, self.get_clock().now().to_msg(), rclpy.duration.Duration(seconds=wait)
+                parent_frame_id, frame_id, Time(), Duration(nanoseconds=int(wait * 1e9))
             )
             return trans
         except Exception as e:
@@ -403,7 +459,7 @@ class RobotInterface(Node):
         index_map = []
         for name in target_joint_names:
             try:
-                j = self.joint_state.name.index(name)
+                j = list(self.joint_state.name).index(name)
             except ValueError:
                 self.get_logger().error("[Robot] Set joint angle: cannot find {}".format(name))
                 return False
@@ -412,11 +468,18 @@ class RobotInterface(Node):
         for index, target_ang in zip(index_map, target_joint_angles):
             current_ang = self.joint_state.position[index]
             delta_ang.append(target_ang - current_ang)
-        self.get_logger().info_throttle(1.0, "[Robot] Delta angle: {}".format(delta_ang))
+        self.get_logger().info("[Robot] Delta angle: {}".format(delta_ang))
         if np.all(np.abs(delta_ang) < thresh):
             return True
         else:
             return False
+
+    def _detect_namespace(self) -> str:
+        topic_names_and_types = self.get_topic_names_and_types()
+        candidates = [name for name, _ in topic_names_and_types if name.endswith("/teleop_command/start")]
+        if len(candidates) == 1:
+            return candidates[0].rsplit("/teleop_command", 1)[0]
+        return ""
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 import rclpy
 import smach
 import smach_ros
@@ -61,7 +60,7 @@ class FlightDemo:
         self.sis.start()
         outcome = self.sm_top.execute()
         self.sis.stop()
-        self.robot.get_logger().info("State machine finished with outcome: " + outcome)
+        self.robot.get_logger().info(f"State machine finished with outcome: {outcome}")
 
 
 def main(args=None):

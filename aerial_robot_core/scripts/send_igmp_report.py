@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 import socket
 import struct
 import netifaces
@@ -22,8 +21,10 @@ class SendIgmpReportNode(Node):
 
     def get_wifi_ip(self):
         gateways = netifaces.gateways()
-        default_ipv4 = gateways.get("default", {}).get(netifaces.AF_INET)
-        if default_ipv4:
+        default_ipv4 = gateways.get("default", {})
+        if isinstance(default_ipv4, dict):
+            default_ipv4 = default_ipv4.get(netifaces.AF_INET)
+        if default_ipv4 and isinstance(default_ipv4, tuple):
             interface_name = default_ipv4[1]
             addresses = netifaces.ifaddresses(interface_name).get(netifaces.AF_INET)
             if addresses:

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 import time
 import numpy as np
 import rclpy
 import smach
-
 from std_msgs.msg import Empty
 from sensor_msgs.msg import Joy
 
@@ -63,7 +61,8 @@ class Start(BaseState):
             self.flags["interfere_mode"] = True
         self.flags["interfering"] = interfere_flag
 
-    def execute(self, userdata):
+    def execute(self, ud):
+        # NOTE: 'ud' variable name is needed from base ROS smach.State class and means 'userdata'
         message = (
             "\n\n [SMACH] Please run the following command to start the state machine: \n"
             "         \"$ ros2 topic pub -1 /task_start std_msgs/msg/Empty '{}'\" \n \n"
@@ -71,14 +70,14 @@ class Start(BaseState):
             "         which enables manual progression via a controller (e.g., PS4).\n"
         )
         self.robot.get_logger().info(message)
-        userdata.flags = self.flags
+        ud.flags = self.flags
         while not self.task_start:
             rclpy.spin_once(self.robot, timeout_sec=0.01)
             time.sleep(0.1)
             self.robot.get_logger().debug("Wait to start task...")
-            if userdata.flags["interfere_mode"]:
+            if ud.flags["interfere_mode"]:
                 self.robot.get_logger().info("[SMACH] {}: enter interference mode".format(self.__class__.__name__))
-                userdata.flags["interfering"] = False
+                ud.flags["interfering"] = False
                 break
             if not rclpy.ok():
                 self.robot.get_logger().error("[SMACH] ROS shutdown")
@@ -98,7 +97,7 @@ class SingleCommandState(BaseState):
         self.hold_time = hold_time
         self.timeout = timeout
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() != self.start_flight_state:
             self.robot.get_logger().warning(
                 "[SMACH] {}: robot state ({}) is not the required start state ({}). preempted!".format(
@@ -114,7 +113,7 @@ class SingleCommandState(BaseState):
                 self.robot.get_logger().info(
                     "[SMACH] {}: robot succeeded to {}!".format(self.__class__.__name__, self.prefix)
                 )
-                self.hold(self.hold_time, userdata.flags)
+                self.hold(self.hold_time, ud.flags)
                 return "succeeded"
             if not rclpy.ok():
                 self.robot.get_logger().error("[SMACH] ROS shutdown during state execution")
@@ -130,22 +129,22 @@ class Arm(SingleCommandState):
     def __init__(self, robot):
         super().__init__(robot, "arm", robot.start, robot.ARM_OFF_STATE, robot.ARM_ON_STATE, 2.0, 2.0)
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() == self.robot.HOVER_STATE:
             self.robot.get_logger().info("[SMACH] {}: robot already hovers, skip".format(self.__class__.__name__))
             return "succeeded"
-        return super().execute(userdata)
+        return super().execute(ud)
 
 
 class Takeoff(SingleCommandState):
     def __init__(self, robot):
         super().__init__(robot, "takeoff", robot.takeoff, robot.ARM_ON_STATE, robot.HOVER_STATE, 30.0, 2.0)
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() == self.robot.HOVER_STATE:
             self.robot.get_logger().info("[SMACH] {}: robot already hovers, skip".format(self.__class__.__name__))
             return "succeeded"
-        return super().execute(userdata)
+        return super().execute(ud)
 
 
 class Land(SingleCommandState):
@@ -163,7 +162,7 @@ class WayPoint(BaseState):
         self.vel_thresh = 0.05
         self.yaw_thresh = 0.1
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
                 "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
@@ -201,7 +200,7 @@ class WayPoint(BaseState):
                 self.robot.get_logger().info(
                     "[SMACH] {}: reached {}th waypoint [{}]".format(self.__class__.__name__, i + 1, waypoint)
                 )
-                self.hold(self.hold_time, userdata.flags)
+                self.hold(self.hold_time, ud.flags)
             else:
                 self.robot.get_logger().warning(
                     "[SMACH] {}: failed to reach waypoint {}. preempted".format(self.__class__.__name__, waypoint)
@@ -224,7 +223,7 @@ class CircleTrajectory(BaseState):
         nav_rate_hz = 20.0
         self.nav_period = 1.0 / nav_rate_hz
 
-    def execute(self, userdata):
+    def execute(self, ud):
         current_pos = self.robot.getCogPos()
         center_pos_x = current_pos[0] - np.cos(self.init_theta) * self.radius
         center_pos_y = current_pos[1] - np.sin(self.init_theta) * self.radius
@@ -257,7 +256,7 @@ class CircleTrajectory(BaseState):
                 cnt = 0
             time.sleep(self.nav_period)
         self.robot.navigate(lin_vel=[0, 0, 0], ang_vel=[0, 0, 0])
-        self.hold(self.hold_time, userdata.flags)
+        self.hold(self.hold_time, ud.flags)
         return "succeeded"
 
 
@@ -270,7 +269,7 @@ class FormCheck(BaseState):
         self.timeout = timeout
         self.thresh = thresh
 
-    def execute(self, userdata):
+    def execute(self, ud):
         ret = self.robot.jointConvergenceCheck(
             self.timeout, self.target_joint_names, self.target_joint_angles, self.thresh
         )
@@ -300,7 +299,7 @@ class Transform(BaseState):
         self.hold_time = hold_time
         self.thresh = thresh
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
                 "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
@@ -321,7 +320,7 @@ class Transform(BaseState):
                         self.__class__.__name__, i + 1, self.target_joint_names, target_angles
                     )
                 )
-                self.hold(self.hold_time, userdata.flags)
+                self.hold(self.hold_time, ud.flags)
             else:
                 self.robot.get_logger().warning(
                     "[SMACH] {}: timeout ({} sec), failed to reach {}th target joints. preempted!".format(
@@ -361,7 +360,7 @@ class TransformWithPose(BaseState):
         self.rot_thresh = rot_thresh
         self.rotate_cog = rotate_cog
 
-    def execute(self, userdata):
+    def execute(self, ud):
         if self.robot.getFlightState() != self.robot.HOVER_STATE:
             self.robot.get_logger().warning(
                 "[SMACH] {}: robot state ({}) is not HOVER_STATE. preempted!".format(
@@ -445,5 +444,5 @@ class TransformWithPose(BaseState):
                     self.__class__.__name__, i + 1, self.target_joint_names, target_pos, target_rot
                 )
             )
-            self.hold(self.hold_time, userdata.flags)
+            self.hold(self.hold_time, ud.flags)
         return "succeeded"

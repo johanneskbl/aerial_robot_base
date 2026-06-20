@@ -1,21 +1,27 @@
 cmake_minimum_required(VERSION 3.5)
 project(aerial_robot_core)
 
+# --- C++17 ---
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# --- Dependencies ---
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(aerial_robot_model REQUIRED)
 find_package(aerial_robot_estimation REQUIRED)
+find_package(aerial_robot_navigation REQUIRED)
+find_package(aerial_robot_control REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp
 )
 
+# --- Build aerial_robot_core_node executable ---
 add_executable(aerial_robot_core_node
   src/aerial_robot_core_node.cpp
   src/aerial_robot_core.cpp
@@ -23,12 +29,16 @@ add_executable(aerial_robot_core_node
 
 ament_target_dependencies(aerial_robot_core_node
   rclcpp
+  pluginlib
   std_msgs
   std_srvs
   aerial_robot_model
   aerial_robot_estimation
+  aerial_robot_navigation
+  aerial_robot_control
 )
 
+# --- Installation ---
 install(
   DIRECTORY include/
   DESTINATION include
@@ -39,23 +49,25 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# Install python files
-ament_python_install_package(${PROJECT_NAME})
-install(PROGRAMS
-  scripts/keyboard_command.py
-  scripts/rms.py
-  scripts/send_igmp_report.py
-  scripts/simple_demo.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-# Install launch files
 install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
-# Linters
+install(PROGRAMS
+  scripts/keyboard_command.py
+  scripts/rms.py
+  scripts/send_igmp_report.py
+  scripts/flight_demo.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# --- Environment hooks ---
+ament_environment_hooks(
+  "${CMAKE_CURRENT_SOURCE_DIR}/bash/env_hooks.sh"
+)
+
+# --- Linters ---
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

@@ -32,7 +32,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "aerial_robot_core/aerial_robot_core.h"
+#include "aerial_robot_core/aerial_robot_core.hpp"
 
 int main(int argc, char *argv[])
 {

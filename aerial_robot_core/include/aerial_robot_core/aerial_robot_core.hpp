@@ -34,15 +34,22 @@
  */
 #pragma once
 
+/* Standard library */
 #include <memory>
 #include <chrono>
+#include <cstdint>
 #include <functional>
+
+/* ROS 2 */
 #include <rclcpp/rclcpp.hpp>
+#include <pluginlib/class_loader.hpp>
 #include <std_msgs/msg/string.hpp>
 
+/* Aerial robot packages */
 #include "aerial_robot_model/model/aerial_robot_model_ros.h"
 #include "aerial_robot_estimation/state_estimation.h"
-
+#include "aerial_robot_navigation/flight_navigation.hpp"
+#include "aerial_robot_control/base/control_base.hpp"
 
 class AerialRobotCore
 {
@@ -51,8 +58,12 @@ public:
   ~AerialRobotCore();
 
 private:
-  void mainFunc();
+  bool param_verbose_;
+  double main_rate_;
   rclcpp::TimerBase::SharedPtr main_timer_;
+
+  rclcpp::Clock steady_clock_{ RCL_STEADY_TIME };
+  int64_t last_main_time_ns_{ 0 };
 
   // Node handle
   rclcpp::Node::SharedPtr node_;
@@ -63,6 +74,16 @@ private:
   // Estimator
   std::shared_ptr<aerial_robot_estimation::StateEstimator> estimator_;
 
-  // For debug
+  // Navigator
+  std::shared_ptr<aerial_robot_navigation::NavigationBase> navigator_;
+
+  // Controller
+  pluginlib::ClassLoader<aerial_robot_control::ControlBase> controller_loader_;
+  std::shared_ptr<aerial_robot_control::ControlBase> controller_;
+
+  // For debug messages
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr debug_pub_;
+
+  // Main loop
+  void mainFunc();
 };
