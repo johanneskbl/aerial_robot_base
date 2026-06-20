@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ This is a configuration file for Fast DDS (formerly Fast-RTPS), which is the default DDS (Data Distribution Service)
+middleware that ROS 2 uses for all node-to-node communication.
+This config makes the ROS 2 network detect node failures very quickly (~1 second) to recover fast when
+a node crashes, rather than leaving stale connections around.
+-->
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <participant profile_name="participant_profile_ros2" is_default_profile="true">
     <rtps>
       <builtin>
         <discovery_config>
+          <!-- If no heartbeat is received within this window, the remote participant is declared dead
+                and removed from the discovery table -->
           <leaseDuration>
             <sec>1</sec>
             <nanosec>0</nanosec>
           </leaseDuration>
+          <!-- How often to send discovery "heartbeat" messages to other participants -->
           <leaseAnnouncement>
             <sec>0</sec>
             <nanosec>250000000</nanosec>
