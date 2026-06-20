@@ -1,0 +1,24 @@
+# Controllers
+
+This package contains the control algorithms for aerial robots. The general control workflow follows a hierarchical structure where a base core manages the update loop and interacts with the state estimator and navigator. The actual control algorithms are implemented in separate classes that inherit from the base core, allowing for modularity and flexibility in implementing different control strategies (e.g., PID, LQI, MPC).
+
+## PID
+
+The PID controller architecture is split into several layers:
+- **`pid.cpp`**: The base class that defines the underlying structure for PID control, including methods for setting gains and limits.
+- **`pose_pid_controller_base.cpp`**: Inherits from the ControlBase. It creates PID controllers for each axis (X, Y, Z, Roll, Pitch, Yaw), loads their respective gains and limits from ROS parameters, and computes the state errors (position, velocity, orientation, and angular velocity).
+- **`under_actuated_pid_controller.cpp`**: Inherits from `PosePIDControllerBase` and takes the computed control outputs from the PID controllers and performs control allocation (torque) for the z-axis to translate them into physical actuator commands (thrust & yaw) which are then published to the flight controller (spinal).
+- **`fully_actuated_pid_controller.cpp`**: Inherits from `PosePIDControllerBase` and takes the computed control outputs from the PID controllers and performs control allocation (wrench & torque) for all axes to translate them into physical actuator commands (thrust & roll/pitch/yaw) which are then published to the flight controller (spinal).
+
+## LQI
+The LQI controllers compute optimal feedback gains by solving a continuous-time algebraic Riccati equation (CARE) for an augmented system with integral states. The CARE solver is in `care.cpp`, and the LQI controller builds `{A,B,Q,R}` and calls the CARE solver to obtain `K_`.
+
+Critically, the PID gains are then **tuned optimally** by the LQI scheme instead of being *hand-tuned* as for the PID controllers. For the LQI controllers, we hand-tune the weights but the gains are computed optimally.
+
+Although, the LQI controllers still inherit and use the outer-loop PID framework from PosePIDControllerBase (state/target acquisition, error computation, PID updates), then uses the LQI-synthesized gains which are then send to spinal as target thrust and angles as well as distributed **per-motor** RPY gains (instead of a single set of gains in the PID controllers).
+
+The LQI controllers are implemented in:
+- **`under_actuated_lqi_controller.cpp`**: Similar to the under-actuated PID controller, it computes the control outputs for the z-axis and yaw, and performs control allocation to translate them into physical actuator commands (thrust & yaw) but crucially uses the LQI gains to compute the control actions.
+- **`under_actuated_tilted_lqi_controller.cpp`**: Similar to the under-actuated LQI controller but with a tilted configuration that allows for some control authority in the x and y axes as well, so it computes control outputs for all axes and performs control allocation accordingly.
+
+## MPC

@@ -1,0 +1,11 @@
+/**/aerial_robot_core:
+  ros__parameters:
+    controller:
+      xy:
+        i_gain: 0.01
+      z:
+        i_gain: 0.01
+      roll_pitch:
+        i_gain: 0.01
+      yaw:
+        i_gain: 0.01

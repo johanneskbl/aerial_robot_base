@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>aerial_robot_control</name>
+  <version>0.0.0</version>
+  <description>ROS 2 package for aerial_robot_control</description>
+  <maintainer email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</maintainer>
+  <license>BSD-3-Clause</license>
+  <author email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- ROS 2 dependencies -->
+  <depend>rclcpp</depend>
+  <depend>pluginlib</depend>
+  <depend>angles</depend>
+  <depend>tf2</depend>
+  <depend>orocos_kdl</depend>
+
+  <!-- Aerial robot dependencies -->
+  <depend>aerial_robot_model</depend>
+  <depend>aerial_robot_estimation</depend>
+  <depend>aerial_robot_navigation</depend>
+  <depend>aerial_robot_msgs</depend>
+  <depend>spinal</depend>
+
+  <!-- Linters -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <pluginlib plugin="${prefix}/plugins/flight_control_plugins.xml"/>
+  </export>
+</package>

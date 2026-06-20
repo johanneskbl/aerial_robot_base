@@ -1,0 +1,22 @@
+/**/aerial_robot_core:
+  ros__parameters:
+    controller:
+      nmpc:
+        Qp_xy: 300
+        Qp_z: 400
+        Qv_xy: 10
+        Qv_z: 10
+        Qq_xy: 300
+        Qq_z: 500
+        Qw_xy: 5
+        Qw_z: 5
+        Qa: 1
+        Rt: 1
+        Rac_d: 250
+        Qt: 1
+        Rtc_d: 1
+        pMxy: 1.5
+        pMz: 1.5
+        oMxy: 1.0
+        oMz: 1.0
+        enlarge_factor: 50.0

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<library path="flight_control_pluginlib">
+
+  <class name="aerial_robot_control/fully_actuated_pid_controller"
+         type="aerial_robot_control::FullyActuatedPIDController"
+         base_class_type="aerial_robot_control::ControlBase">
+    <description>PID controller for fully actuated robots (e.g., tilted hexrotor)</description>
+  </class>
+
+  <class name="aerial_robot_control/under_actuated_pid_controller"
+         type="aerial_robot_control::UnderActuatedPIDController"
+         base_class_type="aerial_robot_control::ControlBase">
+    <description>PID controller for under actuated robots (e.g., quadrotor)</description>
+  </class>
+
+  <class name="aerial_robot_control/under_actuated_lqi_controller"
+         type="aerial_robot_control::UnderActuatedLQIController"
+         base_class_type="aerial_robot_control::ControlBase">
+    <description>LQI controller for under actuated robots (e.g., quadrotor)</description>
+  </class>
+
+  <class name="aerial_robot_control/under_actuated_tilted_lqi_controller"
+         type="aerial_robot_control::UnderActuatedTiltedLQIController"
+         base_class_type="aerial_robot_control::ControlBase">
+    <description>LQI controller for under actuated tilted robots (e.g., quadrotor)</description>
+  </class>
+
+</library>
