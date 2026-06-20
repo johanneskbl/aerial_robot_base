@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 """capitalize_txt_comments.py
 
-Pre-commit hook that capitalizes comment lines in *CMakeLists.txt* only.
+Pre-commit hook that capitalizes comment lines in *CMakeLists.txt* only
+and ensures exactly one space between the # marker and the comment text.
 
 This repository includes a number of hooks that operate on "*.txt"-suffixed
 files. However, "CMakeLists.txt" is a special case: it ends with ".txt" but is
@@ -22,6 +22,7 @@ Rules (CMakeLists.txt mode):
             code / directives and left untouched.
     - Commented-out code / identifiers (e.g. containing "_", "::", "(") are left
       untouched to avoid breaking builds.
+    - Exactly one space is enforced between the final "#" and the comment text.
 
 Usage (called by pre-commit):
     python capitalize_txt_comments.py <file1> [file2 ...]
@@ -32,19 +33,18 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-
 # Patterns that indicate a line should NOT be auto-capitalized:
 #   - Lines starting with a URL scheme
 #   - Lines that are purely numeric / bullet / list markers
 #   - Lines with leading underscores (variable-like tokens)
 _SKIP_RE = re.compile(
     r"""
-    ^[\s]*           # optional leading whitespace
+    ^[\s]*           # Optional leading whitespace
     (?:
         https?://    # URL
-      | \d+\.        # ordered list  "1. item"
-      | [-*+]\s      # unordered bullet
-      | \[           # markdown-style checkbox / link
+      | \d+\.        # Ordered list  "1. item"
+      | [-*+]\s      # Unordered bullet
+      | \[           # Markdown-style checkbox / link
       | [A-Z_]{2,}   # ALL_CAPS constant or header
     )
     """,
@@ -56,9 +56,9 @@ _SKIP_COMMENT_TEXT_RE = re.compile(
     r"""
     ^(?:
         https?://    # URL
-      | \d+\.        # ordered list  "1. item"
-      | [-*+]\s      # unordered bullet
-      | \[           # markdown-style checkbox / link
+      | \d+\.        # Ordered list  "1. item"
+      | [-*+]\s      # Unordered bullet
+      | \[           # Markdown-style checkbox / link
       | [A-Z_]{2,}   # ALL_CAPS constant or header
     )
     """,
@@ -126,6 +126,7 @@ def process_cmake_source(source: str) -> str:
     """Return *source* with eligible CMake comment lines capitalised.
 
     Only lines that start with '#' after optional whitespace are considered.
+    Exactly one space is enforced between the final '#' and the comment text.
     """
     lines = source.splitlines(keepends=True)
     result: list[str] = []
@@ -164,7 +165,8 @@ def process_cmake_source(source: str) -> str:
             continue
 
         updated_comment = _capitalize_first_alpha(comment_text)
-        result.append(f"{hashes}{spaces}{updated_comment}{newline}")
+        # Enforce exactly one space between the hashes and the comment text.
+        result.append(f"{hashes} {updated_comment.lstrip()}{newline}")
 
     return "".join(result)
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 """license_cpp.py
 
 Pre-commit hook that ensures the project LICENSE text is present as a header in
@@ -10,22 +9,20 @@ C / C++ sources.
 Targets (via pre-commit config): .c, .cc, .cpp, .h, .hpp
 
 Behavior:
-  - Reads LICENSE from the project root (sibling of the pre-commit/ directory)
-  - Prepends it as a /* ... */ block comment
-	- Preserves the repo's C++ modeline ("// -*- mode: c++ -*-") above the license
-	- Idempotent: does nothing if the header already exists and matches LICENSE
-	- If a top-of-file license statement exists but differs from LICENSE,
-		replaces it with the canonical LICENSE header
+    - Reads LICENSE from the project root (sibling of the pre-commit/ directory)
+    - Prepends it as a /* ... */ block comment
+    - Preserves the repo's C++ modeline ("// -*- mode: c++ -*-") above the license
+    - Idempotent: does nothing if the header already exists and matches LICENSE
+    - If a top-of-file license statement exists but differs from LICENSE,
+            replaces it with the canonical LICENSE header
 
 Usage (called by pre-commit):
-	python pre-commit/license_cpp.py <file1> [file2 ...]
+        python pre-commit/license_cpp.py <file1> [file2 ...]
 """
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 
 _SIGNATURE_NEEDLES = (
     "Software License Agreement (BSD-3 License)",
@@ -33,6 +30,14 @@ _SIGNATURE_NEEDLES = (
     "All rights reserved.",
     "THIS SOFTWARE IS PROVIDED BY",
 )
+
+
+# Files under these repo-relative directories will be ignored by this hook.
+#
+# Use this to keep vendored / copied sources unchanged.
+# Example (paths are relative to the LICENSE location / this hook's repo root):
+#   _EXCLUDE_DIRS = ("third_party", "vendor")
+_EXCLUDE_DIRS: tuple[str, ...] = ("aerial_robot_nerve/spinal/mcu_project/lib/My_Lib",)
 
 
 # These needles are used to *detect* an existing license header that should be
@@ -67,7 +72,7 @@ def _extract_comment_text(comment: str) -> str:
     comment = comment.replace("\r\n", "\n").replace("\r", "\n")
     comment = comment.strip("\n")
 
-    # /* ... */ comment
+    # /* ... */ Comment
     if comment.lstrip().startswith("/*"):
         left = comment.find("/*")
         right = comment.rfind("*/")
@@ -88,7 +93,7 @@ def _extract_comment_text(comment: str) -> str:
                 lines.append(decorated.rstrip())
         return "\n".join(lines).strip("\n")
 
-    # // comment
+    # // Comment
     lines_out: list[str] = []
     for raw_line in comment.split("\n"):
         line = raw_line.lstrip("\t ")
@@ -164,6 +169,44 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _excluded_entries() -> tuple[str, ...]:
+    """Return normalized excluded entries.
+
+    Keeps the configuration ergonomic and tolerant if `_EXCLUDE_DIRS` is
+    accidentally set to a plain string.
+    """
+
+    if isinstance(_EXCLUDE_DIRS, str):
+        return (_EXCLUDE_DIRS,)
+    return tuple(_EXCLUDE_DIRS)
+
+
+def _is_excluded_path(path: Path) -> bool:
+    """Return True if path is under any excluded directory."""
+
+    repo_root = _repo_root()
+    try:
+        resolved = (repo_root / path).resolve() if not path.is_absolute() else path.resolve()
+    except OSError:
+        # If resolution fails (broken symlink, permission, etc.), do not exclude.
+        resolved = (repo_root / path) if not path.is_absolute() else path
+
+    for rel in _excluded_entries():
+        excluded_root = (repo_root / rel).resolve()
+        try:
+            if resolved.is_relative_to(excluded_root):
+                return True
+        except AttributeError:
+            # Python < 3.9 fallback
+            try:
+                resolved.relative_to(excluded_root)
+                return True
+            except ValueError:
+                pass
+
+    return False
+
+
 def _read_license_text() -> str:
     license_path = _repo_root() / "LICENSE"
     text = license_path.read_text(encoding="utf-8")
@@ -201,7 +244,7 @@ def _apply_to_source(source: str, license_text: str) -> str:
 
     # Preserve the Emacs/Vim modeline above the license
     modeline_prefix = ""
-    if source.startswith(_MODELINE):
+    if source.lower().startswith(_MODELINE):
         line_end = source.find("\n")
         if line_end == -1:
             modeline_prefix = source + "\n"
@@ -250,6 +293,10 @@ def main() -> int:
 
     for path_str in sys.argv[1:]:
         path = Path(path_str)
+
+        if _is_excluded_path(path):
+            continue
+
         try:
             original = path.read_text(encoding="utf-8")
         except OSError as exc:

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 """
 capitalize_yaml_comments.py
 
-Pre-commit hook that capitalizes the first letter of every YAML comment.
+Pre-commit hook that capitalizes the first letter of every YAML comment
+and ensures exactly one space between the # marker and the comment text.
 
 Handles:
   - Full-line comments  : # some text  ->  # Some text
@@ -13,13 +13,16 @@ Handles:
 
 YAML string values (quoted or block scalars) are never modified.
 
+Exceptions (spacing and capitalization are NOT enforced):
+  - Directives: noqa, type:, fmt:, yaml-language-server
+  - Command-like comments (sudo, apt, git, etc.)
+
 Usage (called by pre-commit):
     python capitalize_yaml_comments.py <file1> [file2 ...]
 """
 
 import re
 import sys
-
 
 # ---------------------------------------------------------------------------
 # Heuristics
@@ -105,15 +108,15 @@ def _looks_like_command_comment(text: str) -> bool:
 
 _TOKEN_RE = re.compile(
     r"""
-    # --- double-quoted YAML string ---
+    # --- Double-quoted YAML string ---
     (?P<dquote>"(?:[^"\\]|\\.)*")
     |
-    # --- single-quoted YAML string ('' is an escaped single quote) ---
+    # --- Single-quoted YAML string ('' is an escaped single quote) ---
     (?P<squote>'(?:[^']|'')*')
     |
     # --- YAML comment (# to end of line, NOT consuming the newline) ---
     # Only match # that is preceded by start-of-line or whitespace, to avoid
-    # matching # inside unquoted values like anchor names (&foo).
+    # Matching # inside unquoted values like anchor names (&foo).
     (?P<comment>(?:^|(?<=\s))\#[^\n]*)
     """,
     re.VERBOSE | re.MULTILINE,
@@ -121,7 +124,7 @@ _TOKEN_RE = re.compile(
 
 
 def _capitalize_comment_text(text: str) -> str:
-    """Uppercase the very first alphabetic character in *text*."""
+    """Uppercase the very first alphabetic character in *text* and enforce exactly one space."""
     stripped = text.lstrip(" \t")
     if not stripped:
         return text
@@ -135,16 +138,17 @@ def _capitalize_comment_text(text: str) -> str:
         if "_" in m.group(0):
             return text
         if m.group(0).lower() == "ros":
-            return text[: m.start()] + "ROS" + text[m.end() :]
+            return " ROS" + text[m.end() :]
 
-    for i, ch in enumerate(text):
+    for i, ch in enumerate(stripped):
         if ch.isalpha():
-            return text[:i] + ch.upper() + text[i + 1 :]
+            # Enforce exactly one space before the text, then capitalize.
+            return " " + stripped[:i] + ch.upper() + stripped[i + 1 :]
     return text
 
 
 def _process_comment(raw: str) -> str:
-    """Capitalise a # comment, preserving the # prefix and any leading spaces."""
+    """Capitalise a # comment, enforcing exactly one space after # and before text."""
     # Raw may start with whitespace captured by the lookbehind workaround -
     # find the actual '#' character.
     hash_idx = raw.index("#")
@@ -159,11 +163,21 @@ def _process_comment(raw: str) -> str:
     if lower.startswith(("noqa", "type:", "fmt:", "yaml-language-server")):
         return raw
 
-    # Likely copy/pastable command snippet (e.g. "sudo apt …") - leave alone.
+    # Likely copy/pastable command snippet (e.g. "sudo apt ") - leave alone.
     if _looks_like_command_comment(stripped):
         return raw
 
-    return before_hash + "#" + leading + _capitalize_comment_text(stripped)
+    new_text = _capitalize_comment_text(stripped)
+    # _capitalize_comment_text returns a string starting with exactly one space
+    # when it makes a change. We discard the original 'leading' whitespace
+    # so the result is always "# <one space><text>".
+    if new_text != stripped:
+        return before_hash + "#" + new_text
+    # No capitalization was applied; still enforce the single space.
+    if not stripped:
+        # Empty comment body  leave as-is.
+        return raw
+    return before_hash + "#" + " " + stripped
 
 
 def process_source(source: str) -> str:

@@ -2,7 +2,7 @@
 repos:
   # Python
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 26.5.1
     hooks:
       - id: black
         language: python
@@ -13,7 +13,7 @@ repos:
       # Non-ASCII
       - id: strip-non-ascii
         name: Strip non-ASCII / non-printable characters
-        entry: python pre-commit/strip_non_ascii.py
+        entry: python3 pre-commit/strip_non_ascii.py
         language: system
         types: [text]
         exclude: ^(build/|install/|log/|.jpg|.jpeg|.png|.bmp|.gif)$
@@ -27,61 +27,54 @@ repos:
 
       - id: capitalize-cpp-comments
         name: Capitalize C++ comments
-        entry: python pre-commit/capitalize_cpp_comments.py
+        entry: python3 pre-commit/capitalize_cpp_comments.py
         language: system
         files: \.(cpp|cc|h|hpp)$
 
       # Python
       - id: capitalize-python-comments
         name: Capitalize Python comments
-        entry: python pre-commit/capitalize_python_comments.py
+        entry: python3 pre-commit/capitalize_python_comments.py
         language: system
         files: \.py$
 
       # YAML
       - id: capitalize-yaml-comments
         name: Capitalize YAML comments
-        entry: python pre-commit/capitalize_yaml_comments.py
+        entry: python3 pre-commit/capitalize_yaml_comments.py
         language: system
         files: \.(yaml|yml)$
 
       # TXT
       - id: capitalize-txt-comments
         name: Capitalize TXT first lines
-        entry: python pre-commit/capitalize_txt_comments.py
+        entry: python3 pre-commit/capitalize_txt_comments.py
         language: system
         files: \.txt$
 
       # XML
       - id: capitalize-xml-comments
         name: Capitalize XML comments
-        entry: python pre-commit/capitalize_xml_comments.py
+        entry: python3 pre-commit/capitalize_xml_comments.py
         language: system
         files: \.xml$
-
-      # Xacro
-      - id: capitalize-xacro-comments
-        name: Capitalize Xacro comments
-        entry: python pre-commit/capitalize_xacro_comments.py
-        language: system
-        files: \.xacro$
 
       # Markdown
       - id: capitalize-markdown-comments
         name: Capitalize Markdown HTML comments
-        entry: python pre-commit/capitalize_md_comments.py
+        entry: python3 pre-commit/capitalize_md_comments.py
         language: system
         files: \.(md|markdown)$
 
       # License headers
       - id: license-cpp
         name: Add LICENSE header (C/C++)
-        entry: python pre-commit/license_cpp.py
+        entry: python3 pre-commit/license_cpp.py
         language: system
         files: \.(c|cpp|cc|h|hpp)$
 
       - id: license-python
         name: Add LICENSE header (Python)
-        entry: python pre-commit/license_python.py
+        entry: python3 pre-commit/license_python.py
         language: system
         files: \.py$

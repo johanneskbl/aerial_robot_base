@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 """
 capitalize_xml_comments.py
 
-Pre-commit hook that capitalizes the first letter of every XML/Xacro comment.
+Pre-commit hook that capitalizes the first letter of every XML/Xacro comment
+and ensures exactly one space between the comment marker and the text.
 
 Handles:
   - Single-line XML comments  : <!-- some text -->  ->  <!-- Some text -->
@@ -20,7 +23,6 @@ Usage (called by pre-commit):
 import re
 import sys
 
-
 # ---------------------------------------------------------------------------
 # Tokeniser
 # ---------------------------------------------------------------------------
@@ -33,7 +35,7 @@ _TOKEN_RE = re.compile(
     # --- XML comment <!-- ... --> ---
     (?P<comment><!--.*?-->)
     |
-    # --- quoted attribute value (skip) ---
+    # --- Quoted attribute value (skip) ---
     (?P<dquote>"[^"]*")
     |
     (?P<squote>'[^']*')
@@ -43,7 +45,7 @@ _TOKEN_RE = re.compile(
 
 
 def _capitalize_comment_text(text: str) -> str:
-    """Uppercase the very first alphabetic character in *text*."""
+    """Uppercase the very first alphabetic character in *text* and enforce exactly one space."""
     stripped = text.lstrip(" \t")
     if not stripped:
         return text
@@ -57,11 +59,12 @@ def _capitalize_comment_text(text: str) -> str:
         if "_" in m.group(0):
             return text
         if m.group(0).lower() == "ros":
-            return text[: m.start()] + "ROS" + text[m.end() :]
+            return " ROS" + text[m.end() :]
 
-    for i, ch in enumerate(text):
+    for i, ch in enumerate(stripped):
         if ch.isalpha():
-            return text[:i] + ch.upper() + text[i + 1 :]
+            # Enforce exactly one space before the text, then capitalize.
+            return " " + stripped[:i] + ch.upper() + stripped[i + 1 :]
     return text
 
 
@@ -81,6 +84,10 @@ def _process_xml_comment(raw: str) -> str:
             if m:
                 lead, body, trail = m.group(1), m.group(2), m.group(3)
                 new_body = _capitalize_comment_text(body)
+                # _capitalize_comment_text prepends exactly one space; strip
+                # any trailing space from lead to avoid double-spacing.
+                if new_body != body:
+                    lead = lead.rstrip(" \t")
                 result_lines.append(lead + new_body + trail)
                 if any(c.isalpha() for c in body):
                     capitalized = True
@@ -108,7 +115,7 @@ def process_source(source: str) -> str:
         if kind == "comment":
             result.append(_process_xml_comment(raw))
         else:
-            # Cdata, dquote, squote – emit verbatim
+            # Cdata, dquote, squote - emit verbatim
             result.append(raw)
 
     result.append(source[prev_end:])

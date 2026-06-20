@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 """license_python.py
 
 Pre-commit hook that ensures a short SPDX license header is present in Python
@@ -19,20 +18,26 @@ Behavior:
     - Idempotent: does nothing if the header already exists
 
 Usage (called by pre-commit):
-	python pre-commit/license_python.py <file1> [file2 ...]
+    python pre-commit/license_python.py <file1> [file2 ...]
 """
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path
-
 
 _SIGNATURE_NEEDLES = (
     "SPDX-License-Identifier:",
     "DRAGON Laboratory, The University of Tokyo",
 )
+
+
+# Files under these repo-relative directories will be ignored by this hook.
+#
+# Use this to keep vendored / copied sources unchanged.
+# Example (paths are relative to the LICENSE location / this hook's repo root):
+#   _EXCLUDE_DIRS = ("third_party", "vendor")
+_EXCLUDE_DIRS: tuple[str, ...] = ("aerial_robot_nerve/spinal/mcu_project/lib/My_Lib",)
 
 _ENCODING_RE = re.compile(r"^#.*coding[:=][ \t]*([-\w.]+)")
 
@@ -40,6 +45,44 @@ _ENCODING_RE = re.compile(r"^#.*coding[:=][ \t]*([-\w.]+)")
 def _repo_root() -> Path:
     # Pre-commit/license_python.py -> pre-commit -> repo root
     return Path(__file__).resolve().parent.parent
+
+
+def _excluded_entries() -> tuple[str, ...]:
+    """Return normalized excluded entries.
+
+    Keeps the configuration ergonomic and tolerant if `_EXCLUDE_DIRS` is
+    accidentally set to a plain string.
+    """
+
+    if isinstance(_EXCLUDE_DIRS, str):
+        return (_EXCLUDE_DIRS,)
+    return tuple(_EXCLUDE_DIRS)
+
+
+def _is_excluded_path(path: Path) -> bool:
+    """Return True if path is under any excluded directory."""
+
+    repo_root = _repo_root()
+    try:
+        resolved = (repo_root / path).resolve() if not path.is_absolute() else path.resolve()
+    except OSError:
+        # If resolution fails (broken symlink, permission, etc.), do not exclude.
+        resolved = (repo_root / path) if not path.is_absolute() else path
+
+    for rel in _excluded_entries():
+        excluded_root = (repo_root / rel).resolve()
+        try:
+            if resolved.is_relative_to(excluded_root):
+                return True
+        except AttributeError:
+            # Python < 3.9 fallback
+            try:
+                resolved.relative_to(excluded_root)
+                return True
+            except ValueError:
+                pass
+
+    return False
 
 
 def _read_license_file() -> str:
@@ -116,7 +159,6 @@ def _format_spdx_header(spdx_id: str, year: str) -> str:
     return (
         f"# SPDX-License-Identifier: {spdx_id}\n"
         f"# Copyright (c) {year}, DRAGON Laboratory, The University of Tokyo\n"
-        "\n"
     )
 
 
@@ -140,7 +182,7 @@ def _split_python_preamble(lines: list[str]) -> tuple[list[str], list[str]]:
         preamble.append(lines[idx])
         idx += 1
     elif idx == 1 and idx < len(lines) and _ENCODING_RE.match(lines[idx]):
-        # (covered by branch above, but kept for clarity)
+        # (Covered by branch above, but kept for clarity)
         preamble.append(lines[idx])
         idx += 1
 
@@ -181,12 +223,11 @@ def _apply_to_source(source: str, header_text: str) -> str:
         k = start + len(header_lines)
         while k < len(rest) and rest[k].strip() == "":
             del rest[k]
-        rest.insert(k, "")
     else:
         # Strip leading blanks so we don't accumulate spacing before/after header.
         while rest and rest[0].strip() == "":
             rest.pop(0)
-        rest = header_lines + [""] + rest
+        rest = header_lines + rest
 
     # If file is empty (or only preamble), ensure we don't create extra leading
     # blank lines beyond the standard header separator.
@@ -196,7 +237,7 @@ def _apply_to_source(source: str, header_text: str) -> str:
 
     rebuilt += "\n".join(rest)
 
-    # `split("\n")` drops the final newline information; normalize to one.
+    # `Split("\n")` drops the final newline information; normalize to one.
     return bom + rebuilt.rstrip("\n") + "\n"
 
 
@@ -222,6 +263,10 @@ def main() -> int:
 
     for path_str in sys.argv[1:]:
         path = Path(path_str)
+
+        if _is_excluded_path(path):
+            continue
+
         try:
             original = path.read_text(encoding="utf-8")
         except OSError as exc:

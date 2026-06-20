@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 """
 capitalize_comments.py
 
-Pre-commit hook that capitalizes the first letter of every C++ comment.
+Pre-commit hook that capitalizes the first letter of every C++ comment
+and ensures exactly one whitespace before the first letter.
 
 Handles:
   - Single-line comments  : // some text  ->  // Some text
@@ -17,7 +20,6 @@ Usage (called by pre-commit):
 import re
 import sys
 
-
 # ---------------------------------------------------------------------------
 # Tokeniser
 # ---------------------------------------------------------------------------
@@ -28,71 +30,132 @@ import sys
 
 _TOKEN_RE = re.compile(
     r"""
-    # --- string / char literals (skip entirely) ---
+    # --- String / char literals (skip entirely) ---
     (?P<string>
-        "(?:[^"\\]|\\.)*"       # double-quoted string
-      | '(?:[^'\\]|\\.)*'       # single-quoted char
+        "(?:[^"\\]|\\.)*"       # Double-quoted string
+      | '(?:[^'\\]|\\.)*'       # Single-quoted char
     )
     |
-    # --- raw string literal R"delim(...)delim" ---
+    # --- Raw string literal R"delim(...)delim" ---
     (?P<rawstring>
         R"(?P<delim>[^()\\ \t\v\f\n]*)\(
         .*?
         \)(?P=delim)"
     )
     |
-    # --- block comment ---
+    # --- Block comment ---
     (?P<block>/\*.*?\*/)
     |
-    # --- line comment (to end of line, NOT consuming the newline) ---
+    # --- Line comment (to end of line, NOT consuming the newline) ---
     (?P<line>//[^\n]*)
     """,
     re.VERBOSE | re.DOTALL,
 )
 
 
+# If a comment's first word is one of these, we assume it is a code-ish comment
+# (often commented-out code) and we leave it untouched.
+_NO_CAPITALIZE_FIRST_WORDS = frozenset(
+    {
+        "namespace",
+        "clang",
+        "include",
+        "define",
+        "ifdef",
+        "ifndef",
+        "endif",
+        "pragma",
+        "using",
+        "typedef",
+        "struct",
+        "class",
+        "template",
+        "enum",
+        "union",
+        "return",
+        "if",
+        "else",
+        "for",
+        "while",
+        "switch",
+        "case",
+        "break",
+        "continue",
+        "try",
+        "catch",
+        "throw",
+        "public",
+        "private",
+        "protected",
+        "nullptr",
+        "true",
+        "false",
+        "const",
+        "static",
+        "virtual",
+        "override",
+        "final",
+        "auto",
+        "int",
+        "float",
+        "double",
+        "bool",
+        "char",
+        "void",
+        "std",
+        "https",
+        "http",
+        "www",
+        "inline",
+        "x",
+        "y",
+        "z",
+    }
+)
+
+
 def _capitalize_comment_text(text: str) -> str:
-    """Uppercase the very first alphabetic character in *text*."""
+    """Uppercase the very first alphabetic character in *text* and enforce exactly one space."""
     stripped = text.lstrip(" \t")
     if not stripped:
         return text
     # If the first non-whitespace character is not alphabetic (e.g. '<', '.',
-    # '(', '-', '1'), do not attempt capitalization.
+    # '(', '-', '1'), do not attempt capitalization or spacing adjustments.
     if not stripped[0].isalpha():
         return text
 
-    # Do not capitalize if the very first word in the comment contains an
-    # underscore, as it is likely a variable name or commented-out code.
-    m = re.search(r"[a-zA-Z_]\w*", text)
-    if m:
-        if "_" in m.group(0):
+    # Do not capitalize if the very first word in the comment looks like code.
+    first_word_match = re.match(r"[a-zA-Z_]\w*", stripped)
+    if first_word_match:
+        first_word = first_word_match.group(0)
+        first_word_lower = first_word.lower()
+        if "_" in first_word:
             return text
-        if m.group(0).lower() == "ros":
-            return text[: m.start()] + "ROS" + text[m.end() :]
+        if stripped[len(first_word) :].startswith("."):
+            return text
+        if first_word_lower == "ros":
+            return " ROS" + stripped[len(first_word) :]
+        if first_word_lower in _NO_CAPITALIZE_FIRST_WORDS:
+            return text
 
-    for i, ch in enumerate(text):
+    for i, ch in enumerate(stripped):
         if ch.isalpha():
-            return text[:i] + ch.upper() + text[i + 1 :]
+            return " " + stripped[:i] + ch.upper() + stripped[i + 1 :]
     return text
 
 
 def _process_line_comment(raw: str) -> str:
-    """Capitalise a // comment, preserving the // prefix and any leading spaces."""
-    # Raw starts with '//'
+    """Capitalise a // comment, ensuring exactly one space prefix after //."""
     prefix = "//"
     rest = raw[len(prefix) :]
-    # Preserve leading whitespace after //
-    stripped = rest.lstrip(" \t")
-    leading = rest[: len(rest) - len(stripped)]
-    return prefix + leading + _capitalize_comment_text(stripped)
+    return prefix + _capitalize_comment_text(rest)
 
 
 def _process_block_comment(raw: str) -> str:
-    """Capitalise text inside a /* … */ block comment.
+    """Capitalise text inside a /* ... */ block comment.
 
     Strategy: capitalise the first alphabetic character in the entire block
     """
-    # Split into /* , body , */
     assert raw.startswith("/*") and raw.endswith("*/")
     inner = raw[2:-2]  # Everything between /* and */
 
@@ -103,9 +166,13 @@ def _process_block_comment(raw: str) -> str:
     for line in lines:
         if not capitalized:
             # Decorative prefix patterns like " * ", " *", leading spaces
-            m = re.match(r"^([ \t]*\*?[ \t]*)(.*?)(\s*)$", line, re.DOTALL)
+            m = re.match(r"^([ \t]*\*?)(.*?)(\s*)$", line, re.DOTALL)
             if m:
                 lead, body, trail = m.group(1), m.group(2), m.group(3)
+                # If body begins with alpha, _capitalize_comment_text handles the single space.
+                # If lead ends in spaces, we drop them so we don't double-space.
+                if body and body.lstrip(" \t") and body.lstrip(" \t")[0].isalpha():
+                    lead = lead.rstrip(" \t")
                 result_lines.append(lead + _capitalize_comment_text(body) + trail)
                 if any(c.isalpha() for c in body):
                     capitalized = True
@@ -124,7 +191,6 @@ def process_source(source: str) -> str:
     last_was_line_comment = False
 
     for m in _TOKEN_RE.finditer(source):
-        # Emit the literal text between the previous token and this one
         gap = source[prev_end : m.start()]
         result.append(gap)
         prev_end = m.end()
@@ -147,18 +213,11 @@ def process_source(source: str) -> str:
             result.append(_process_block_comment(raw))
             last_was_line_comment = False
         else:
-            # String, rawstring – emit verbatim
             result.append(raw)
             last_was_line_comment = False
 
-    # Tail after the last token
     result.append(source[prev_end:])
     return "".join(result)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:

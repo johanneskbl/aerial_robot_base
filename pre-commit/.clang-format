@@ -25,6 +25,7 @@ ContinuationIndentWidth: 4                            # Indent width for wrapped
 Cpp11BracedListStyle: false                           # Force C++11 braced-list formatting style
 DerivePointerBinding: false                           # Auto-derive pointer/reference binding style
 ExperimentalAutoDetectBinPacking: false               # Experimental bin-packing auto-detection
+FixNamespaceComments: false                           # Add a namespace identifier at the end of the block
 IndentCaseLabels: true                                # Indent case/default labels within switch
 IndentFunctionDeclarationAfterType: false             # Indent function name after return type
 IndentWidth: 2                                        # Indent size for each block
@@ -35,8 +36,8 @@ PenaltyBreakAssignment: 200                           # Cost of breaking around 
 PenaltyBreakBeforeFirstCallParameter: 19              # Cost of breaking before first call parameter
 PenaltyBreakComment: 20                               # Cost of breaking comments
 PenaltyBreakTemplateDeclaration: 100                  # Cost of breaking before template declarations
-PenaltyBreakFirstLessLess: 0                         # Cost of breaking << chains early
-PenaltyBreakString: 1000000                             # Cost of breaking string literals
+PenaltyBreakFirstLessLess: 0                          # Cost of breaking << chains early
+PenaltyBreakString: 1000000                           # Cost of breaking string literals
 PenaltyExcessCharacter: 1000                          # Cost of exceeding ColumnLimit
 PenaltyReturnTypeOnItsOwnLine: 1000                   # Cost of placing return type on its own line
 PointerBindsToType: false                             # Bind * and & to the type (e.g., int* p) OR to the variable (e.g., int *p)

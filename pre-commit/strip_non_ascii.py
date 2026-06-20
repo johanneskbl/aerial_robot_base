@@ -1,33 +1,32 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
-
 """strip_non_ascii.py
 
 Pre-commit hook that removes non-ASCII / non-printable characters from text files.
 
 Motivation:
-  Prevent accidental inclusion of characters like Chinese/Japanese glyphs or other
-  non-ASCII symbols in committed sources.
+    Prevent accidental inclusion of characters like Chinese/Japanese glyphs or other
+    non-ASCII symbols in committed sources.
 
 Behavior:
-  - Operates on the files passed by pre-commit.
-  - Skips likely-binary files (detected via NUL byte in the first chunk).
-  - Keeps: TAB (\t), LF (\n), CR (\r), and printable ASCII 0x20..0x7E.
-  - Removes: everything else (bytes < 0x20 except whitespace above, and bytes >= 0x80).
+    - Operates on the files passed by pre-commit.
+    - Skips likely-binary files (detected via NUL byte in the first chunk).
+    - Keeps: TAB (\t), LF (\n), CR (\r), printable ASCII 0x20..0x7E, and selected
+        exception characters.
+    - Removes: everything else.
 
 Usage (called by pre-commit):
     python pre-commit/strip_non_ascii.py <file1> [file2 ...]
 """
 
 from __future__ import annotations
-
 import sys
 
-
-_PRINTABLE_ASCII = set(range(0x20, 0x7F))
-_ALLOWED_WHITESPACE = {0x09, 0x0A, 0x0D}  # \t, \n, \r
-_ALLOWED_BYTES = _PRINTABLE_ASCII | _ALLOWED_WHITESPACE
+_EXCEPTION_CHARACTERS = {"ä", "ö", "ü", "Ä", "Ö", "Ü"}
+_PRINTABLE_ASCII = {chr(codepoint) for codepoint in range(0x20, 0x7F)}
+_ALLOWED_WHITESPACE = {"\t", "\n", "\r"}
+_ALLOWED_CHARACTERS = _PRINTABLE_ASCII | _ALLOWED_WHITESPACE | _EXCEPTION_CHARACTERS
 
 
 def _is_probably_binary(data: bytes) -> bool:
@@ -35,14 +34,15 @@ def _is_probably_binary(data: bytes) -> bool:
 
 
 def _filter_bytes(data: bytes) -> tuple[bytes, int]:
+    text = data.decode("utf-8", errors="surrogateescape")
     removed = 0
-    out = bytearray()
-    for b in data:
-        if b in _ALLOWED_BYTES:
-            out.append(b)
+    out = []
+    for character in text:
+        if character in _ALLOWED_CHARACTERS:
+            out.append(character)
         else:
             removed += 1
-    return bytes(out), removed
+    return "".join(out).encode("utf-8"), removed
 
 
 def main() -> int:
@@ -78,9 +78,9 @@ def main() -> int:
             errors.append(f"Cannot write {path}: {exc}")
 
     if changed:
-        print("strip_non_ascii: removed non-ASCII / non-printable bytes from:")
+        print("strip_non_ascii: removed non-ASCII / non-printable characters from:")
         for path, removed in changed:
-            print(f"  {path} ({removed} byte(s) removed)")
+            print(f"  {path} ({removed} character(s) removed)")
 
     if skipped:
         print("strip_non_ascii: skipped likely-binary files:")
