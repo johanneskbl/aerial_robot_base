@@ -31,7 +31,7 @@ jobs:
 
           # On a new branch / first push, ignore
           ZERO=0000000000000000000000000000000000000000
-          if [[ env.FROM == "$ZERO" ]]
+          if [[ env.FROM == "$ZERO" ]]; then
             echo "RUN=false" >> $GITHUB_ENV
           else
             echo "RUN=true" >> $GITHUB_ENV
