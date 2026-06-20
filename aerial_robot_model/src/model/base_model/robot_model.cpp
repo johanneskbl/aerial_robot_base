@@ -89,11 +89,6 @@ void RobotModel::initialize(rclcpp::Node::SharedPtr node, bool init_with_rospara
 void RobotModel::getParamFromRos()
 {
   // Declare & get parameters
-  node_->declare_parameter("kinematic_verbose", verbose_);
-  node_->declare_parameter("fc_f_min_thre", fc_f_min_thre_);
-  node_->declare_parameter("fc_t_min_thre", fc_t_min_thre_);
-  node_->declare_parameter("epsilon", epsilon_);
-
   node_->get_parameter("kinematic_verbose", verbose_);
   node_->get_parameter("fc_f_min_thre", fc_f_min_thre_);
   node_->get_parameter("fc_t_min_thre", fc_t_min_thre_);
