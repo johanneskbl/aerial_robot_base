@@ -1,40 +1,39 @@
 // -*- Mode: c++ -*-
-/*********************************************************************
- * Software License Agreement (BSD License)
+/*
+ * Software License Agreement (BSD-3 License)
  *
- *  Copyright (c) 2026, DRAGON Lab
- *  All rights reserved.
+ * Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+ * All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/o2r other materials provided
- *     with the distribution.
- *   * Neither the name of the DRAGON Lab nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer in the documentation and/or other materials provided
+ *      with the distribution.
+ *   3. Neither the name of the DRAGON Laboratory nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-#include <aerial_robot_estimation/sensor/base_plugin.h>
-#include <aerial_robot_estimation/state_estimation.h>
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+#include "aerial_robot_estimation/sensor/base_plugin.h"
+#include "aerial_robot_estimation/state_estimation.h"
 
 using namespace aerial_robot_estimation;
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("state_estimation");
@@ -45,6 +44,9 @@ StateEstimator::StateEstimator()
     unhealth_level_(0),
     prev_pub_stamp_(0),
     flying_flag_(false),
+    landing_mode_flag_(false),
+    landed_flag_(false),
+    landing_height_(0),
     un_descend_flag_(false),
     force_att_control_flag_(false),
     has_groundtruth_odom_(false),
@@ -82,6 +84,8 @@ void StateEstimator::initialize(rclcpp::Node::SharedPtr node,
   baselink_odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("uav/baselink/odom",
                                                                         rclcpp::SystemDefaultsQoS());
   cog_odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("uav/cog/odom", rclcpp::SystemDefaultsQoS());
+  ee_contact_odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("uav/ee_contact/odom",
+                                                                          rclcpp::SystemDefaultsQoS());
 
   node_->get_parameter_or("tf_prefix", tf_prefix_, std::string(""));
   br_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
@@ -102,7 +106,7 @@ void StateEstimator::load()
 
     if (cmp != FNM_NOMATCH)
     {
-      RCLCPP_ERROR(LOGGER, "Plugin list check error! fnmatch('%s', '%s', FNM_CASEFOLD) -> %d", pl.c_str(),
+      RCLCPP_ERROR(LOGGER, "[estimation] Plugin list check error! fnmatch('%s', '%s', FNM_CASEFOLD) -> %d", pl.c_str(),
                    pl_candidate.c_str(), cmp);
     }
 
@@ -112,7 +116,7 @@ void StateEstimator::load()
   node_->get_parameter_or("estimation.mode", estimate_mode_, 0);  // EGOMOTION_ESTIMATE: 0
   if (estimate_mode_ > GROUND_TRUTH)
   {
-    RCLCPP_ERROR(LOGGER, "The estimate mode is not correct: %d. It should be [0, 1, 2].", estimate_mode_);
+    RCLCPP_ERROR(LOGGER, "[estimation] The estimate mode is not correct: %d. It should be [0, 1, 2].", estimate_mode_);
     return;
   }
 
@@ -148,7 +152,7 @@ void StateEstimator::load()
     std::vector<std::string> fuser_list;
     if (!node_->get_parameter<std::vector<std::string>>(fuse_prefix + mode_prefix + "_list", fuser_list))
     {
-      RCLCPP_ERROR_STREAM(LOGGER, fuse_prefix << mode_prefix << "_list is not set");
+      RCLCPP_ERROR_STREAM(LOGGER, "[estimation] " << fuse_prefix << mode_prefix << "_list is not set");
       return;
     }
 
@@ -166,7 +170,7 @@ void StateEstimator::load()
         std::string fuser_id_param = fuse_prefix + mode_prefix + "_id" + fuser_no.str();
         if (!node_->get_parameter<int>(fuser_id_param, fuser_id))
         {
-          RCLCPP_ERROR(LOGGER, "%s, no param in fuser %s id", mode_prefix.c_str(), fuser_no.str().c_str());
+          RCLCPP_ERROR(LOGGER, "[estimation] %s, no param in fuser %s id", mode_prefix.c_str(), fuser_no.str().c_str());
           continue;
         }
 
@@ -174,7 +178,8 @@ void StateEstimator::load()
         std::string fuser_name_param = fuse_prefix + mode_prefix + "_label" + fuser_no.str();
         if (!node_->get_parameter<std::string>(fuser_name_param, fuser_label))
         {
-          RCLCPP_ERROR(LOGGER, "%s, no param in fuser %s name", mode_prefix.c_str(), fuser_no.str().c_str());
+          RCLCPP_ERROR(LOGGER, "[estimation] %s, no param in fuser %s name", mode_prefix.c_str(),
+                       fuser_no.str().c_str());
           continue;
         }
 
@@ -186,7 +191,7 @@ void StateEstimator::load()
         }
         catch (const pluginlib::PluginlibException &ex)
         {
-          RCLCPP_ERROR(LOGGER, "Failed to load kf plugin '%s': %s", name.c_str(), ex.what());
+          RCLCPP_ERROR(LOGGER, "[estimation] Failed to load kf plugin '%s': %s", name.c_str(), ex.what());
         }
       }
     }
@@ -198,7 +203,7 @@ void StateEstimator::load()
   std::vector<std::string> sensor_list{};
   if (!node_->get_parameter<std::vector<std::string>>(fuse_prefix + "sensor_list", sensor_list))
   {
-    RCLCPP_ERROR_STREAM(LOGGER, fuse_prefix << "sensor_list is not set");
+    RCLCPP_ERROR_STREAM(LOGGER, "[estimation] " << fuse_prefix << "sensor_list is not set");
     return;
   }
 
@@ -269,7 +274,7 @@ void StateEstimator::setBasePosStateStatus(uint8_t axis, uint8_t estimate_mode, 
     }
     else
     {
-      RCLCPP_WARN(LOGGER, "wrong pos status update for axis: %d, estimate mode: %d", axis, estimate_mode);
+      RCLCPP_WARN(LOGGER, "[estimation] wrong pos status update for axis: %d, estimate mode: %d", axis, estimate_mode);
     }
   }
 }
@@ -299,7 +304,7 @@ void StateEstimator::setBaseRotStateStatus(uint8_t estimate_mode, bool status)
     }
     else
     {
-      RCLCPP_WARN(LOGGER, "wrong rot status update for estimate mode: %d", estimate_mode);
+      RCLCPP_WARN(LOGGER, "[estimation] wrong rot status update for estimate mode: %d", estimate_mode);
     }
   }
 }
@@ -329,7 +334,7 @@ void StateEstimator::setCogPosStateStatus(uint8_t axis, uint8_t estimate_mode, b
     }
     else
     {
-      RCLCPP_WARN(LOGGER, "wrong pos status update for axis: %d, estimate mode: %d", axis, estimate_mode);
+      RCLCPP_WARN(LOGGER, "[estimation] wrong pos status update for axis: %d, estimate mode: %d", axis, estimate_mode);
     }
   }
 }
@@ -359,7 +364,7 @@ void StateEstimator::setCogRotStateStatus(uint8_t estimate_mode, bool status)
     }
     else
     {
-      RCLCPP_WARN(LOGGER, "wrong rot status update for estimate mode: %d", estimate_mode);
+      RCLCPP_WARN(LOGGER, "[estimation] wrong rot status update for estimate mode: %d", estimate_mode);
     }
   }
 }
@@ -573,6 +578,15 @@ const KDL::Vector StateEstimator::getCogEuler(int estimate_mode)
   return KDL::Vector(r, p, y);
 }
 
+const tf2::Quaternion StateEstimator::getCogQuaternion(int estimate_mode)
+{
+  KDL::Rotation rot = getCogOrientation(estimate_mode);
+  double qx, qy, qz, qw;
+  rot.GetQuaternion(qx, qy, qz, qw);  // NOTE: (x, y, z, w) order & normalized
+
+  return tf2::Quaternion(qx, qy, qz, qw);
+}
+
 const KDL::Vector StateEstimator::getCogAngularVel(int estimate_mode)
 {
   std::lock_guard<std::mutex> lock(state_mutex_);
@@ -693,7 +707,7 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
   {
     if (verbose)
     {
-      RCLCPP_WARN(LOGGER, "estimation: no valid queue for timestamp to find proper r and omega");
+      RCLCPP_WARN(LOGGER, "[estimation] No valid queue for timestamp to find proper r and omega");
     }
 
     return false;
@@ -703,7 +717,7 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
   {
     if (verbose)
     {
-      RCLCPP_WARN_STREAM(LOGGER, "estimation: sensor timestamp "
+      RCLCPP_WARN_STREAM(LOGGER, "[estimation] Sensor timestamp "
                                      << timestamp << " is earlier than the oldest timestamp " << timestamp_qu_.front()
                                      << " in queue");
     }
@@ -714,8 +728,8 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
   {
     if (verbose)
     {
-      RCLCPP_WARN_STREAM(LOGGER, "estimation: sensor timestamp " << timestamp << " is later than the latest timestamp "
-                                                                 << timestamp_qu_.back() << " in queue");
+      RCLCPP_WARN_STREAM(LOGGER, "[estimation] Sensor timestamp " << timestamp << " is later than the latest timestamp "
+                                                                  << timestamp_qu_.back() << " in queue");
     }
     return false;
   }
@@ -735,7 +749,7 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
         else
           candidate_index = std::distance(timestamp_qu_.begin(), it - 1);
 
-        // RCLCPP_INFO(LOGGER, "find timestamp sensor vs imu: [%f, %f], candidate: %d", timestamp,
+        // RCLCPP_INFO(LOGGER, "[estimation] Find timestamp sensor vs imu: [%f, %f], candidate: %d", timestamp,
         // timestamp_qu_.at(candidate_index), candidate_index);
         break;
       }
@@ -758,7 +772,7 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
           candidate_index = timestamp_qu_.size() - 1 - std::distance(timestamp_qu_.rbegin(), it - 1);
         }
 
-        // RCLCPP_INFO(LOGGER, "reverse find timestamp sensor vs imu: [%f, %f], %d", timestamp,
+        // RCLCPP_INFO(LOGGER, "[estimation] Reverse find timestamp sensor vs imu: [%f, %f], %d", timestamp,
         // timestamp_qu_.at(candidate_index) , candidate_index);
         break;
       }
@@ -775,7 +789,7 @@ bool StateEstimator::findBaseRotOmega(const double timestamp, const int mode, KD
       r = base_rot_ex_qu_.at(candidate_index);
       break;
     default:
-      RCLCPP_ERROR(LOGGER, "estimation search state with timestamp: wrong mode %d", mode);
+      RCLCPP_ERROR(LOGGER, "[estimation] Search state with timestamp: wrong mode %d", mode);
       return false;
   }
 
@@ -844,6 +858,20 @@ void StateEstimator::odomPublish(rclcpp::Time stamp)
   odom_state.pose.pose = tf2::toMsg(getCogPose(estimate_mode_));
   odom_state.twist.twist = aerial_robot_model::kdlToMsg(getCogTwist(estimate_mode_));
   cog_odom_pub_->publish(odom_state);
+
+  /* Publish End-Effector Contact Point odometry */
+  if (robot_model_->hasFrame("ee_contact"))
+  {
+    // Conversion
+    KDL::Frame ee_pose_;   // Expressed in world frame
+    KDL::Twist ee_twist_;  // Expressed in world frame
+    robot_model_->convertFromCoGToEEContact(getCogPose(estimate_mode_), getCogTwist(estimate_mode_), ee_pose_,
+                                            ee_twist_);
+    odom_state.child_frame_id = tf_prefix_.empty() ? "ee_contact" : tf_prefix_ + "/ee_contact";
+    odom_state.pose.pose = tf2::toMsg(ee_pose_);
+    odom_state.twist.twist = aerial_robot_model::kdlToMsg(ee_twist_);
+    ee_contact_odom_pub_->publish(odom_state);
+  }
 }
 
 void StateEstimator::tfBroadcast(rclcpp::Time stamp)

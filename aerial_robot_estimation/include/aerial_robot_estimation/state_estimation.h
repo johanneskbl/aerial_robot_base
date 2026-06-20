@@ -1,64 +1,64 @@
 // -*- Mode: c++ -*-
-/*********************************************************************
- * Software License Agreement (BSD License)
+/*
+ * Software License Agreement (BSD-3 License)
  *
- *  Copyright (c) 2026, DRAGON Lab
- *  All rights reserved.
+ * Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+ * All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/o2r other materials provided
- *     with the distribution.
- *   * Neither the name of the DRAGON Lab nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer in the documentation and/or other materials provided
+ *      with the distribution.
+ *   3. Neither the name of the DRAGON Laboratory nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #pragma once
 
-/* Common utility */
+/* Standard library */
 #include <deque>
 #include <fnmatch.h>
-#include <kdl/frames.hpp>
 
-/* aerial_robot_core API */
-#include <kalman_filter/kf_base_plugin.h>
-#include <aerial_robot_model/model/aerial_robot_model.h>
-
-/* ROS API */
+/* ROS 2 */
 #include <rclcpp/rclcpp.hpp>
 #include <pluginlib/class_loader.hpp>
+#include <kdl/frames.hpp>
 #include <tf2_ros/transform_broadcaster.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
-/* ROS messages */
-#include <aerial_robot_msgs/msg/states.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-//#Include <geographic_msgs/msg/geo_point.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/u_int8.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geographic_msgs/msg/geo_point.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
-using StatusVector = std::array<int, 3>;           // X, y, z
+/* Kalman Filter library */
+#include "kalman_filter/kf_base_plugin.h"
+
+/* Aerial robot packages */
+#include "aerial_robot_model/model/aerial_robot_model.h"
+#include "aerial_robot_msgs/msg/states.hpp"
+
+
+using StatusVector = std::array<int, 3>;           // x, y, z
 using StatusMatrix = std::array<StatusVector, 3>;  // Egomotion, experiment, ground truth
 using FuserPtr = std::shared_ptr<kf_plugin::KalmanFilter>;
 using FuserList = std::vector<std::pair<std::string, FuserPtr>>;
@@ -71,7 +71,7 @@ enum
   Y,
   Z
 };
-};
+}
 
 namespace Sensor
 {
@@ -81,13 +81,13 @@ enum
   UNHEALTH_LEVEL2,      // Change estimation mode
   UNHEALTH_LEVEL3,      // Force landing
 };
-};
+}
 
 /* Pre-definition */
 namespace sensor_plugin
 {
 class SensorBase;
-};
+}
 
 
 namespace aerial_robot_estimation
@@ -153,6 +153,7 @@ public:
   const KDL::Rotation getCogOrientation(int estimate_mode);
   void setCogOrientation(int estimate_mode, KDL::Rotation rot);
   const KDL::Vector getCogEuler(int estimate_mode);
+  const tf2::Quaternion getCogQuaternion(int estimate_mode);
   const KDL::Vector getCogAngularVel(int estimate_mode);
   void setCogAngularVel(int estimate_mode, KDL::Vector omega);
 
@@ -176,15 +177,24 @@ public:
   // Start flying flag (~takeoff)
   virtual bool getFlyingFlag() { return flying_flag_; }
   virtual void setFlyingFlag(bool flag) { flying_flag_ = flag; }
+  // Start landing mode
+  virtual bool getLandingMode() { return landing_mode_flag_; }
+  virtual void setLandingMode(bool flag) { landing_mode_flag_ = flag; }
+  // Landed flag (acc_z check, ground shock)
+  virtual bool getLandedFlag() { return landed_flag_; }
+  virtual void setLandedFlag(bool flag) { landed_flag_ = flag; }
   /* When takeoff, should use the undescend mode be true */
   inline void setUnDescendMode(bool flag) { un_descend_flag_ = flag; }
   inline bool getUnDescendMode() { return un_descend_flag_; }
+  /* Landing height is set for landing on different terrain */
+  virtual void setLandingHeight(float landing_height) { landing_height_ = landing_height; }
+  virtual float getLandingHeight() { return landing_height_; }
   /* Att control mode is for user to manually control x and y motion by attitude control */
   inline void setForceAttControlFlag(bool flag) { force_att_control_flag_ = flag; }
   inline bool getForceAttControlFlag() { return force_att_control_flag_; }
   /* Latitude & longitude value for GPS based navigation */
-  // Inline void setCurrGpsPoint(const geographic_msgs::GeoPoint point) {curr_wgs84_poiont_ = point;}
-  // Inline const geographic_msgs::GeoPoint& getCurrGpsPoint() const {return curr_wgs84_poiont_;}
+  inline void setCurrGpsPoint(const geographic_msgs::msg::GeoPoint point) { curr_wgs84_point_ = point; }
+  inline const geographic_msgs::msg::GeoPoint &getCurrGpsPoint() const { return curr_wgs84_point_; }
   inline const bool hasGroundTruthOdom() const { return has_groundtruth_odom_; }
   inline void receiveGroundTruthOdom(bool flag) { has_groundtruth_odom_ = flag; }
   inline const bool hasRefinedYawEstimate(int i) const { return has_refined_yaw_estimate_.at(i); }
@@ -216,7 +226,7 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   /* Publisher */
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr baselink_odom_pub_, cog_odom_pub_;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr baselink_odom_pub_, cog_odom_pub_, ee_contact_odom_pub_;
 
   /* Timer */
   rclcpp::TimerBase::SharedPtr state_process_timer_;
@@ -271,11 +281,14 @@ protected:
 
   /* Height related var */
   bool flying_flag_;
+  bool landing_mode_flag_;
+  bool landed_flag_;
   bool un_descend_flag_;
+  float landing_height_;
   bool force_att_control_flag_;
 
   /* Latitude & longitude point */
-  // geographic_msgs::GeoPoint curr_wgs84_poiont_;
+  geographic_msgs::msg::GeoPoint curr_wgs84_point_;
 
   /* Time */
   rclcpp::Time prev_pub_stamp_;
@@ -287,4 +300,4 @@ protected:
   void tfBroadcast(rclcpp::Time stamp);
   void load();
 };
-};  // Namespace aerial_robot_estimation
+}

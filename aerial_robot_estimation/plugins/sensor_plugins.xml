@@ -4,6 +4,10 @@
     <description>IMU sensor plugin.</description>
   </class>
 
+  <class name="sensor_plugin/imu_for_wrench_est" type="sensor_plugin::Imu4WrenchEst" base_class_type="sensor_plugin::SensorBase">
+    <description>IMU sensor plugin for wrench estimation.</description>
+  </class>
+
   <class name="sensor_plugin/ground_truth" type="sensor_plugin::GroundTruth" base_class_type="sensor_plugin::SensorBase">
     <description>Mocap sensor plugin.</description>
   </class>
@@ -14,6 +18,14 @@
 
   <class name="sensor_plugin/odometry" type="sensor_plugin::Odometry" base_class_type="sensor_plugin::SensorBase">
     <description>Visual Odometry sensor plugin.</description>
+  </class>
+
+  <class name="sensor_plugin/gps" type="sensor_plugin::Gps" base_class_type="sensor_plugin::SensorBase">
+    <description>GPS sensor plugin.</description>
+  </class>
+
+  <class name="sensor_plugin/altitude" type="sensor_plugin::AltitudeSensor" base_class_type="sensor_plugin::SensorBase">
+    <description>Altitude sensor plugin.</description>
   </class>
 
 </library>
