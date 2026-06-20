@@ -1,6 +1,6 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
- * matrix3.cpp
+ * Matrix3.cpp
  * Copyright (C) Siddharth Bharat Purohit, 3DRobotics Inc. 2015
  *
  * This file is free software: you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 #include <math/AP_Math.h>
 #include <stdio.h>
 
-namespace ap {
+namespace ap
+{
 
 // TODO: use higher precision datatypes to achieve more accuracy for matrix algebra operations
 
 /*
- *    Does matrix multiplication of two regular/square matrices
+ * Does matrix multiplication of two regular/square matrices
  *
  *    @param     A,           Matrix A
  *    @param     B,           Matrix B
@@ -38,13 +39,17 @@ namespace ap {
  *    @returns                multiplied matrix i.e. A*B
  */
 
-float *mat_mul(float *A, float *B, uint8_t n) {
+float *mat_mul(float *A, float *B, uint8_t n)
+{
   float *ret = new float[n * n];
   memset(ret, 0.0f, n * n * sizeof(float));
 
-  for (uint8_t i = 0; i < n; i++) {
-    for (uint8_t j = 0; j < n; j++) {
-      for (uint8_t k = 0; k < n; k++) {
+  for (uint8_t i = 0; i < n; i++)
+  {
+    for (uint8_t j = 0; j < n; j++)
+    {
+      for (uint8_t k = 0; k < n; k++)
+      {
         ret[i * n + j] += A[i * n + k] * B[k * n + j];
       }
     }
@@ -52,7 +57,8 @@ float *mat_mul(float *A, float *B, uint8_t n) {
   return ret;
 }
 
-static inline void swap(float &a, float &b) {
+static inline void swap(float &a, float &b)
+{
   float c;
   c = a;
   a = b;
@@ -60,7 +66,7 @@ static inline void swap(float &a, float &b) {
 }
 
 /*
- *    calculates pivot matrix such that all the larger elements in the row are on diagonal
+ * Calculates pivot matrix such that all the larger elements in the row are on diagonal
  *
  *    @param     A,           input matrix matrix
  *    @param     pivot
@@ -68,23 +74,31 @@ static inline void swap(float &a, float &b) {
  *    @returns                false = matrix is Singular or non positive definite, true = matrix inversion successful
  */
 
-void mat_pivot(float *A, float *pivot, uint8_t n) {
-  for (uint8_t i = 0; i < n; i++) {
-    for (uint8_t j = 0; j < n; j++) {
+void mat_pivot(float *A, float *pivot, uint8_t n)
+{
+  for (uint8_t i = 0; i < n; i++)
+  {
+    for (uint8_t j = 0; j < n; j++)
+    {
       pivot[i * n + j] = (i == j);
     }
   }
 
-  for (uint8_t i = 0; i < n; i++) {
+  for (uint8_t i = 0; i < n; i++)
+  {
     uint8_t max_j = i;
-    for (uint8_t j = i; j < n; j++) {
-      if (fabsf(A[j * n + i]) > fabsf(A[max_j * n + i])) {
+    for (uint8_t j = i; j < n; j++)
+    {
+      if (fabsf(A[j * n + i]) > fabsf(A[max_j * n + i]))
+      {
         max_j = j;
       }
     }
 
-    if (max_j != i) {
-      for (uint8_t k = 0; k < n; k++) {
+    if (max_j != i)
+    {
+      for (uint8_t k = 0; k < n; k++)
+      {
         swap(pivot[i * n + k], pivot[max_j * n + k]);
       }
     }
@@ -92,19 +106,23 @@ void mat_pivot(float *A, float *pivot, uint8_t n) {
 }
 
 /*
- *    calculates matrix inverse of Lower trangular matrix using forward substitution
+ * Calculates matrix inverse of Lower trangular matrix using forward substitution
  *
  *    @param     L,           lower triangular matrix
  *    @param     out,         Output inverted lower triangular matrix
  *    @param     n,           dimension of matrix
  */
 
-void mat_forward_sub(float *L, float *out, uint8_t n) {
+void mat_forward_sub(float *L, float *out, uint8_t n)
+{
   // Forward substitution solve LY = I
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++)
+  {
     out[i * n + i] = 1 / L[i * n + i];
-    for (int j = i + 1; j < n; j++) {
-      for (int k = i; k < j; k++) {
+    for (int j = i + 1; j < n; j++)
+    {
+      for (int k = i; k < j; k++)
+      {
         out[j * n + i] -= L[j * n + k] * out[k * n + i];
       }
       out[j * n + i] /= L[j * n + j];
@@ -113,19 +131,23 @@ void mat_forward_sub(float *L, float *out, uint8_t n) {
 }
 
 /*
- *    calculates matrix inverse of Upper trangular matrix using backward substitution
+ * Calculates matrix inverse of Upper trangular matrix using backward substitution
  *
  *    @param     U,           upper triangular matrix
  *    @param     out,         Output inverted upper triangular matrix
  *    @param     n,           dimension of matrix
  */
 
-void mat_back_sub(float *U, float *out, uint8_t n) {
+void mat_back_sub(float *U, float *out, uint8_t n)
+{
   // Backward Substitution solve UY = I
-  for (int i = n - 1; i >= 0; i--) {
+  for (int i = n - 1; i >= 0; i--)
+  {
     out[i * n + i] = 1 / U[i * n + i];
-    for (int j = i - 1; j >= 0; j--) {
-      for (int k = i; k > j; k--) {
+    for (int j = i - 1; j >= 0; j--)
+    {
+      for (int k = i; k > j; k--)
+      {
         out[j * n + i] -= U[j * n + k] * out[k * n + i];
       }
       out[j * n + i] /= U[j * n + j];
@@ -134,7 +156,7 @@ void mat_back_sub(float *U, float *out, uint8_t n) {
 }
 
 /*
- *    Decomposes square matrix into Lower and Upper triangular matrices such that
+ * Decomposes square matrix into Lower and Upper triangular matrices such that
  *    A*P = L*U, where P is the pivot matrix
  *    ref: http://rosettacode.org/wiki/LU_decomposition
  *    @param     U,           upper triangular matrix
@@ -142,27 +164,35 @@ void mat_back_sub(float *U, float *out, uint8_t n) {
  *    @param     n,           dimension of matrix
  */
 
-void mat_LU_decompose(float *A, float *L, float *U, float *P, uint8_t n) {
+void mat_LU_decompose(float *A, float *L, float *U, float *P, uint8_t n)
+{
   memset(L, 0, n * n * sizeof(float));
   memset(U, 0, n * n * sizeof(float));
   memset(P, 0, n * n * sizeof(float));
   mat_pivot(A, P, n);
 
   float *APrime = ap::mat_mul(P, A, n);
-  for (uint8_t i = 0; i < n; i++) {
+  for (uint8_t i = 0; i < n; i++)
+  {
     L[i * n + i] = 1;
   }
-  for (uint8_t i = 0; i < n; i++) {
-    for (uint8_t j = 0; j < n; j++) {
-      if (j <= i) {
+  for (uint8_t i = 0; i < n; i++)
+  {
+    for (uint8_t j = 0; j < n; j++)
+    {
+      if (j <= i)
+      {
         U[j * n + i] = APrime[j * n + i];
-        for (uint8_t k = 0; k < j; k++) {
+        for (uint8_t k = 0; k < j; k++)
+        {
           U[j * n + i] -= L[j * n + k] * U[k * n + i];
         }
       }
-      if (j >= i) {
+      if (j >= i)
+      {
         L[j * n + i] = APrime[j * n + i];
-        for (uint8_t k = 0; k < i; k++) {
+        for (uint8_t k = 0; k < i; k++)
+        {
           L[j * n + i] -= L[j * n + k] * U[k * n + i];
         }
         L[j * n + i] /= U[i * n + i];
@@ -173,7 +203,7 @@ void mat_LU_decompose(float *A, float *L, float *U, float *P, uint8_t n) {
 }
 
 /*
- *    matrix inverse code for any square matrix using LU decomposition
+ * Matrix inverse code for any square matrix using LU decomposition
  *    inv = inv(U)*inv(L)*P, where L and U are triagular matrices and P the pivot matrix
  *    ref: http://www.cl.cam.ac.uk/teaching/1314/NumMethods/supporting/mcmaster-kiruba-ludecomp.pdf
  *    @param     m,           input 4x4 matrix
@@ -181,7 +211,8 @@ void mat_LU_decompose(float *A, float *L, float *U, float *P, uint8_t n) {
  *    @param     n,           dimension of square matrix
  *    @returns                false = matrix is Singular, true = matrix inversion successful
  */
-bool mat_inverse(float *A, float *inv, uint8_t n) {
+bool mat_inverse(float *A, float *inv, uint8_t n)
+{
   float *L, *U, *P;
   bool ret = true;
   L = new float[n * n];
@@ -198,24 +229,27 @@ bool mat_inverse(float *A, float *inv, uint8_t n) {
   memset(U_inv, 0, n * n * sizeof(float));
   mat_back_sub(U, U_inv, n);
 
-  // decomposed matrices no loger required
+  // Decomposed matrices no loger required
   free(L);
   free(U);
 
   float *inv_unpivoted = ap::mat_mul(U_inv, L_inv, n);
   float *inv_pivoted = ap::mat_mul(inv_unpivoted, P, n);
 
-  // check sanity of results
-  for (uint8_t i = 0; i < n; i++) {
-    for (uint8_t j = 0; j < n; j++) {
-      if (isnan(inv_pivoted[i * n + j]) || isinf(inv_pivoted[i * n + j])) {
+  // Check sanity of results
+  for (uint8_t i = 0; i < n; i++)
+  {
+    for (uint8_t j = 0; j < n; j++)
+    {
+      if (isnan(inv_pivoted[i * n + j]) || isinf(inv_pivoted[i * n + j]))
+      {
         ret = false;
       }
     }
   }
   memcpy(inv, inv_pivoted, n * n * sizeof(float));
 
-  // free memory
+  // Free memory
   free(inv_pivoted);
   free(inv_unpivoted);
   free(P);
@@ -223,19 +257,21 @@ bool mat_inverse(float *A, float *inv, uint8_t n) {
 }
 
 /*
- *    fast matrix inverse code only for 3x3 square matrix
+ * Fast matrix inverse code only for 3x3 square matrix
  *
  *    @param     m,           input 4x4 matrix
  *    @param     invOut,      Output inverted 4x4 matrix
  *    @returns                false = matrix is Singular, true = matrix inversion successful
  */
 
-bool inverse3x3(float m[], float invOut[]) {
+bool inverse3x3(float m[], float invOut[])
+{
   float inv[9];
-  // computes the inverse of a matrix m
-  float det =
-      m[0] * (m[4] * m[8] - m[7] * m[5]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]);
-  if (is_zero(det)) {
+  // Computes the inverse of a matrix m
+  float det = m[0] * (m[4] * m[8] - m[7] * m[5]) - m[1] * (m[3] * m[8] - m[5] * m[6]) +
+              m[2] * (m[3] * m[7] - m[4] * m[6]);
+  if (is_zero(det))
+  {
     return false;
   }
 
@@ -251,7 +287,8 @@ bool inverse3x3(float m[], float invOut[]) {
   inv[7] = (m[6] * m[1] - m[0] * m[7]) * invdet;
   inv[8] = (m[0] * m[4] - m[3] * m[1]) * invdet;
 
-  for (uint8_t i = 0; i < 9; i++) {
+  for (uint8_t i = 0; i < 9; i++)
+  {
     invOut[i] = inv[i];
   }
 
@@ -259,7 +296,7 @@ bool inverse3x3(float m[], float invOut[]) {
 }
 
 /*
- *    fast matrix inverse code only for 4x4 square matrix copied from
+ * Fast matrix inverse code only for 4x4 square matrix copied from
  *    gluInvertMatrix implementation in opengl for 4x4 matrices.
  *
  *    @param     m,           input 4x4 matrix
@@ -267,7 +304,8 @@ bool inverse3x3(float m[], float invOut[]) {
  *    @returns                false = matrix is Singular, true = matrix inversion successful
  */
 
-bool inverse4x4(float m[], float invOut[]) {
+bool inverse4x4(float m[], float invOut[])
+{
   float inv[16], det;
   uint8_t i;
 
@@ -321,7 +359,8 @@ bool inverse4x4(float m[], float invOut[]) {
 
   det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
-  if (is_zero(det)) {
+  if (is_zero(det))
+  {
     return false;
   }
 
@@ -332,15 +371,17 @@ bool inverse4x4(float m[], float invOut[]) {
 }
 
 /*
- *    generic matrix inverse code
+ * Generic matrix inverse code
  *
  *    @param     x,     input nxn matrix
  *    @param     y,     Output inverted nxn matrix
  *    @param     n,     dimension of square matrix
  *    @returns          false = matrix is Singular, true = matrix inversion successful
  */
-bool inverse(float x[], float y[], uint16_t dim) {
-  switch (dim) {
+bool inverse(float x[], float y[], uint16_t dim)
+{
+  switch (dim)
+  {
     case 3:
       return ap::inverse3x3(x, y);
     case 4:
@@ -349,4 +390,4 @@ bool inverse(float x[], float y[], uint16_t dim) {
       return mat_inverse(x, y, dim);
   }
 }
-};  // namespace ap
+}

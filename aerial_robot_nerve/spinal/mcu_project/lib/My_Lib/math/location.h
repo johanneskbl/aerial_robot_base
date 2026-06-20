@@ -28,20 +28,24 @@
 
 #define PACKED __attribute__((__packed__))
 
-namespace ap {
-struct PACKED Location_Option_Flags {
+namespace ap
+{
+struct PACKED Location_Option_Flags
+{
   uint8_t relative_alt : 1;  // 1 if altitude is relateive to home
-  uint8_t unused1 : 1;       // unused flag (defined so that loiter_ccw uses the correct bit)
+  uint8_t unused1 : 1;       // Unused flag (defined so that loiter_ccw uses the correct bit)
   uint8_t loiter_ccw : 1;    // 0 if clockwise, 1 if counter clockwise
-  uint8_t terrain_alt : 1;   // this altitude is above terrain
+  uint8_t terrain_alt : 1;   // This altitude is above terrain
 };
 
-struct PACKED Location {
-  union PACKED {
+struct PACKED Location
+{
+  union PACKED
+  {
     Location_Option_Flags flags;  ///< options bitmask (1<<0 = relative altitude)
     uint8_t options;              /// allows writing all flags to eeprom as one byte
   };
-  // by making alt 24 bit we can make p1 in a command 16 bit,
+  // By making alt 24 bit we can make p1 in a command 16 bit,
   // allowing an accurate angle in centi-degrees. This keeps the
   // storage cost per mission item at 15 bytes, and allows mission
   // altitudes of up to +/- 83km
@@ -66,7 +70,7 @@ uint32_t get_distance_cm(const struct Location &loc1, const struct Location &loc
 // return bearing in centi-degrees between two locations
 int32_t get_bearing_cd(const struct Location &loc1, const struct Location &loc2);
 
-// see if location is past a line perpendicular to
+// See if location is past a line perpendicular to
 // the line between point1 and point2. If point1 is
 // our previous waypoint and point2 is our target waypoint
 // then this function returns true if we have flown past
@@ -75,36 +79,36 @@ bool location_passed_point(const struct Location &location, const struct Locatio
                            const struct Location &point2);
 
 /*
-  return the proportion we are along the path from point1 to
+return the proportion we are along the path from point1 to
   point2. This will be less than >1 if we have passed point2
 */
 float location_path_proportion(const struct Location &location, const struct Location &point1,
                                const struct Location &point2);
 
-//  extrapolate latitude/longitude given bearing and distance
+// Extrapolate latitude/longitude given bearing and distance
 void location_update(struct Location &loc, float bearing, float distance);
 
-// extrapolate latitude/longitude given distances north and east
+// Extrapolate latitude/longitude given distances north and east
 void location_offset(struct Location &loc, float ofs_north, float ofs_east);
 
 /*
-  return the distance in meters in North/East plane as a N/E vector
+return the distance in meters in North/East plane as a N/E vector
   from loc1 to loc2
 */
 Vector2f location_diff(const struct Location &loc1, const struct Location &loc2);
 
 /*
- * check if lat and lng match. Ignore altitude and options
+ * Check if lat and lng match. Ignore altitude and options
  */
 bool locations_are_same(const struct Location &loc1, const struct Location &loc2);
 
 /*
- * convert invalid waypoint with useful data. return true if location changed
+ * Convert invalid waypoint with useful data. return true if location changed
  */
 bool location_sanitize(const struct Location &defaultLoc, struct Location &loc);
 
 /*
-  print a int32_t lat/long in decimal degrees
+ Print a int32_t lat/long in decimal degrees
 */
 /*void        print_latlon(AP_HAL::BetterStream *s, int32_t lat_or_lon); */
 
@@ -117,5 +121,5 @@ void wgsllh2ecef(const Vector3d &llh, Vector3d &ecef);
 // coordinates (X, Y, Z), into WHS84 geodetic
 // coordinates (lat, lon, height)
 void wgsecef2llh(const Vector3d &ecef, Vector3d &llh);
-};  // namespace ap
+}
 #endif

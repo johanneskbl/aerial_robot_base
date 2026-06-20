@@ -1,6 +1,6 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
-  This program is free software: you can redistribute it and/or modify
+ This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -26,7 +26,7 @@
  *          18-12-2003
  *          06-06-2004
  *
- * Copyright (C) 2003, This code is provided "as is" and you can use it freely as long as
+ *  2003, This code is provided "as is" and you can use it freely as long as
  * credit is given to Bill Perone in the application it is used in
  *
  * Notes:
@@ -59,63 +59,65 @@
 #include <assert.h>
 #endif
 
-namespace ap {
-template <typename T>
-class Matrix3;
+namespace ap
+{
+template <typename T> class Matrix3;
 
-template <typename T>
-class Vector3 {
- public:
+template <typename T> class Vector3
+{
+public:
   T x, y, z;
 
-  // trivial ctor
+  // Trivial ctor
   Vector3<T>() { x = y = z = 0; }
 
-  // setting ctor
+  // Setting ctor
   Vector3<T>(const T x0, const T y0, const T z0) : x(x0), y(y0), z(z0) {}
 
-  // function call operator
-  void operator()(const T x0, const T y0, const T z0) {
+  // Function call operator
+  void operator()(const T x0, const T y0, const T z0)
+  {
     x = x0;
     y = y0;
     z = z0;
   }
 
-  // test for equality
+  // Test for equality
   bool operator==(const Vector3<T> &v) const;
 
-  // test for inequality
+  // Test for inequality
   bool operator!=(const Vector3<T> &v) const;
 
-  // negation
+  // Negation
   Vector3<T> operator-(void) const;
 
-  // addition
+  // Addition
   Vector3<T> operator+(const Vector3<T> &v) const;
 
-  // subtraction
+  // Subtraction
   Vector3<T> operator-(const Vector3<T> &v) const;
 
-  // uniform scaling
+  // Uniform scaling
   Vector3<T> operator*(const T num) const;
 
-  // uniform scaling
+  // Uniform scaling
   Vector3<T> operator/(const T num) const;
 
-  // addition
+  // Addition
   Vector3<T> &operator+=(const Vector3<T> &v);
 
-  // subtraction
+  // Subtraction
   Vector3<T> &operator-=(const Vector3<T> &v);
 
-  // uniform scaling
+  // Uniform scaling
   Vector3<T> &operator*=(const T num);
 
-  // uniform scaling
+  // Uniform scaling
   Vector3<T> &operator/=(const T num);
 
-  // allow a vector3 to be used as an array, 0 indexed
-  T &operator[](uint8_t i) {
+  // Allow a vector3 to be used as an array, 0 indexed
+  T &operator[](uint8_t i)
+  {
     T *_v = &x;
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < 3);
@@ -123,7 +125,8 @@ class Vector3 {
     return _v[i];
   }
 
-  const T &operator[](uint8_t i) const {
+  const T &operator[](uint8_t i) const
+  {
     const T *_v = &x;
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < 3);
@@ -131,57 +134,58 @@ class Vector3 {
     return _v[i];
   }
 
-  // dot product
+  // Dot product
   T operator*(const Vector3<T> &v) const;
 
-  // multiply a row vector by a matrix, to give a row vector
+  // Multiply a row vector by a matrix, to give a row vector
   Vector3<T> operator*(const Matrix3<T> &m) const;
 
-  // multiply a column vector by a row vector, returning a 3x3 matrix
+  // Multiply a column vector by a row vector, returning a 3x3 matrix
   Matrix3<T> mul_rowcol(const Vector3<T> &v) const;
 
-  // cross product
+  // Cross product
   Vector3<T> operator%(const Vector3<T> &v) const;
 
-  // computes the angle between this vector and another vector
+  // Computes the angle between this vector and another vector
   float angle(const Vector3<T> &v2) const;
 
-  // check if all elements are zero
+  // Check if all elements are zero
   bool is_zero(void) const { return (fabsf(x) < FLT_EPSILON) && (fabsf(y) < FLT_EPSILON) && (fabsf(z) < FLT_EPSILON); }
 
-  // check if any elements are NAN
+  // Check if any elements are NAN
   bool is_nan(void);
 
-  // rotate by a standard rotation
+  // Rotate by a standard rotation
   void rotate(enum Rotation rotation);
   void rotate_inverse(enum Rotation rotation);
 
-  // gets the length of this vector squared
+  // Gets the length of this vector squared
   T length_squared() const { return (T)(*this * *this); }
 
-  // gets the length of this vector
+  // Gets the length of this vector
   float length(void) const;
 
-  // normalizes this vector
+  // Normalizes this vector
   void normalize() { *this /= length(); }
 
-  // zero the vector
+  // Zero the vector
   void zero() { x = y = z = 0; }
 
-  // returns the normalized version of this vector
+  // Returns the normalized version of this vector
   Vector3<T> normalized() const { return *this / length(); }
 
-  // reflects this vector about n
-  void reflect(const Vector3<T> &n) {
+  // Reflects this vector about n
+  void reflect(const Vector3<T> &n)
+  {
     Vector3<T> orig(*this);
     project(n);
     *this = *this * 2 - orig;
   }
 
-  // projects this vector onto v
+  // Projects this vector onto v
   void project(const Vector3<T> &v) { *this = v * (*this * v) / (v * v); }
 
-  // returns this vector projected onto v
+  // Returns this vector projected onto v
   Vector3<T> projected(const Vector3<T> &v) const { return v * (*this * v) / (v * v); }
 };
 
@@ -192,6 +196,6 @@ typedef Vector3<uint32_t> Vector3ul;
 typedef Vector3<float> Vector3f;
 typedef Vector3<double> Vector3d;
 
-};  // namespace ap
+}
 
 #endif  // VECTOR3_H

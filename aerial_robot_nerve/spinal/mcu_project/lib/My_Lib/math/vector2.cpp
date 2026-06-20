@@ -1,6 +1,6 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
- * vector3.cpp
+ * vector2.cpp
  * Copyright (C) Andrew Tridgell 2012
  *
  * This file is free software: you can redistribute it and/or modify it
@@ -25,112 +25,91 @@
 
 #include "AP_Math.h"
 
-namespace ap {
+namespace ap
+{
 
-template <typename T>
-float Vector2<T>::length(void) const {
-  return pythagorous2(x, y);
-}
+template <typename T> float Vector2<T>::length(void) const { return pythagorous2(x, y); }
 
-// dot product
-template <typename T>
-T Vector2<T>::operator*(const Vector2<T> &v) const {
-  return x * v.x + y * v.y;
-}
+// Dot product
+template <typename T> T Vector2<T>::operator*(const Vector2<T> &v) const { return x * v.x + y * v.y; }
 
-// cross product
-template <typename T>
-T Vector2<T>::operator%(const Vector2<T> &v) const {
-  return x * v.y - y * v.x;
-}
+// Cross product
+template <typename T> T Vector2<T>::operator%(const Vector2<T> &v) const { return x * v.y - y * v.x; }
 
-template <typename T>
-Vector2<T> &Vector2<T>::operator*=(const T num) {
+template <typename T> Vector2<T> &Vector2<T>::operator*=(const T num)
+{
   x *= num;
   y *= num;
   return *this;
 }
 
-template <typename T>
-Vector2<T> &Vector2<T>::operator/=(const T num) {
+template <typename T> Vector2<T> &Vector2<T>::operator/=(const T num)
+{
   x /= num;
   y /= num;
   return *this;
 }
 
-template <typename T>
-Vector2<T> &Vector2<T>::operator-=(const Vector2<T> &v) {
+template <typename T> Vector2<T> &Vector2<T>::operator-=(const Vector2<T> &v)
+{
   x -= v.x;
   y -= v.y;
   return *this;
 }
 
-template <typename T>
-bool Vector2<T>::is_nan(void) const {
-  return isnan(x) || isnan(y);
-}
+template <typename T> bool Vector2<T>::is_nan(void) const { return isnan(x) || isnan(y); }
 
-template <typename T>
-bool Vector2<T>::is_inf(void) const {
-  return isinf(x) || isinf(y);
-}
+template <typename T> bool Vector2<T>::is_inf(void) const { return isinf(x) || isinf(y); }
 
-template <typename T>
-Vector2<T> &Vector2<T>::operator+=(const Vector2<T> &v) {
+template <typename T> Vector2<T> &Vector2<T>::operator+=(const Vector2<T> &v)
+{
   x += v.x;
   y += v.y;
   return *this;
 }
 
-template <typename T>
-Vector2<T> Vector2<T>::operator/(const T num) const {
-  return Vector2<T>(x / num, y / num);
-}
+template <typename T> Vector2<T> Vector2<T>::operator/(const T num) const { return Vector2<T>(x / num, y / num); }
 
-template <typename T>
-Vector2<T> Vector2<T>::operator*(const T num) const {
-  return Vector2<T>(x * num, y * num);
-}
+template <typename T> Vector2<T> Vector2<T>::operator*(const T num) const { return Vector2<T>(x * num, y * num); }
 
-template <typename T>
-Vector2<T> Vector2<T>::operator-(const Vector2<T> &v) const {
+template <typename T> Vector2<T> Vector2<T>::operator-(const Vector2<T> &v) const
+{
   return Vector2<T>(x - v.x, y - v.y);
 }
 
-template <typename T>
-Vector2<T> Vector2<T>::operator+(const Vector2<T> &v) const {
+template <typename T> Vector2<T> Vector2<T>::operator+(const Vector2<T> &v) const
+{
   return Vector2<T>(x + v.x, y + v.y);
 }
 
-template <typename T>
-Vector2<T> Vector2<T>::operator-(void) const {
-  return Vector2<T>(-x, -y);
-}
+template <typename T> Vector2<T> Vector2<T>::operator-(void) const { return Vector2<T>(-x, -y); }
 
-template <typename T>
-bool Vector2<T>::operator==(const Vector2<T> &v) const {
+template <typename T> bool Vector2<T>::operator==(const Vector2<T> &v) const
+{
   return (is_equal(x, v.x) && is_equal(y, v.y));
 }
 
-template <typename T>
-bool Vector2<T>::operator!=(const Vector2<T> &v) const {
+template <typename T> bool Vector2<T>::operator!=(const Vector2<T> &v) const
+{
   return (!is_equal(x, v.x) || !is_equal(y, v.y));
 }
 
-template <typename T>
-float Vector2<T>::angle(const Vector2<T> &v2) const {
+template <typename T> float Vector2<T>::angle(const Vector2<T> &v2) const
+{
   float len = this->length() * v2.length();
-  if (len <= 0) {
+  if (len <= 0)
+  {
     return 0.0f;
   }
   float cosv = ((*this) * v2) / len;
-  if (fabsf(cosv) >= 1) {
+  if (fabsf(cosv) >= 1)
+  {
     return 0.0f;
   }
   return acosf(cosv);
 }
 
-// only define for float
+// Only define for float
 template float Vector2<float>::length(void) const;
 template float Vector2<float>::operator*(const Vector2<float> &v) const;
 template float Vector2<float>::operator%(const Vector2<float> &v) const;
@@ -148,4 +127,4 @@ template bool Vector2<float>::operator!=(const Vector2<float> &v) const;
 template bool Vector2<float>::is_nan(void) const;
 template bool Vector2<float>::is_inf(void) const;
 template float Vector2<float>::angle(const Vector2<float> &v) const;
-};  // namespace ap
+}

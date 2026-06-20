@@ -1,6 +1,6 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
-  This program is free software: you can redistribute it and/or modify
+ This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -42,57 +42,62 @@
 
 #include "vector3.h"
 
-namespace ap {
+namespace ap
+{
 // 3x3 matrix with elements of type T
-template <typename T>
-class Matrix3 {
- public:
+template <typename T> class Matrix3
+{
+public:
   // Vectors comprising the rows of the matrix
   Vector3<T> a, b, c;
 
-  // trivial ctor
+  // Trivial ctor
   // note that the Vector3 ctor will zero the vector elements
   Matrix3<T>() {}
 
-  // setting ctor
+  // Setting ctor
   Matrix3<T>(const Vector3<T> &a0, const Vector3<T> &b0, const Vector3<T> &c0) : a(a0), b(b0), c(c0) {}
 
-  // setting ctor
+  // Setting ctor
   Matrix3<T>(const T ax, const T ay, const T az, const T bx, const T by, const T bz, const T cx, const T cy, const T cz)
-      : a(ax, ay, az), b(bx, by, bz), c(cx, cy, cz) {}
+    : a(ax, ay, az), b(bx, by, bz), c(cx, cy, cz)
+  {
+  }
 
-  // function call operator
-  void operator()(const Vector3<T> &a0, const Vector3<T> &b0, const Vector3<T> &c0) {
+  // Function call operator
+  void operator()(const Vector3<T> &a0, const Vector3<T> &b0, const Vector3<T> &c0)
+  {
     a = a0;
     b = b0;
     c = c0;
   }
 
-  // test for equality
+  // Test for equality
   bool operator==(const Matrix3<T> &m) { return (a == m.a && b == m.b && c == m.c); }
 
-  // test for inequality
+  // Test for inequality
   bool operator!=(const Matrix3<T> &m) { return (a != m.a || b != m.b || c != m.c); }
 
-  // negation
+  // Negation
   Matrix3<T> operator-(void) const { return Matrix3<T>(-a, -b, -c); }
 
-  // addition
+  // Addition
   Matrix3<T> operator+(const Matrix3<T> &m) const { return Matrix3<T>(a + m.a, b + m.b, c + m.c); }
   Matrix3<T> &operator+=(const Matrix3<T> &m) { return *this = *this + m; }
 
-  // subtraction
+  // Subtraction
   Matrix3<T> operator-(const Matrix3<T> &m) const { return Matrix3<T>(a - m.a, b - m.b, c - m.c); }
   Matrix3<T> &operator-=(const Matrix3<T> &m) { return *this = *this - m; }
 
-  // uniform scaling
+  // Uniform scaling
   Matrix3<T> operator*(const T num) const { return Matrix3<T>(a * num, b * num, c * num); }
   Matrix3<T> &operator*=(const T num) { return *this = *this * num; }
   Matrix3<T> operator/(const T num) const { return Matrix3<T>(a / num, b / num, c / num); }
   Matrix3<T> &operator/=(const T num) { return *this = *this / num; }
 
-  // allow a Matrix3 to be used as an array of vectors, 0 indexed
-  Vector3<T> &operator[](uint8_t i) {
+  // Allow a Matrix3 to be used as an array of vectors, 0 indexed
+  Vector3<T> &operator[](uint8_t i)
+  {
     Vector3<T> *_v = &a;
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < 3);
@@ -100,7 +105,8 @@ class Matrix3 {
     return _v[i];
   }
 
-  const Vector3<T> &operator[](uint8_t i) const {
+  const Vector3<T> &operator[](uint8_t i) const
+  {
     const Vector3<T> *_v = &a;
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < 3);
@@ -108,79 +114,80 @@ class Matrix3 {
     return _v[i];
   }
 
-  // multiplication by a vector
+  // Multiplication by a vector
   Vector3<T> operator*(const Vector3<T> &v) const;
 
-  // multiplication of transpose by a vector
+  // Multiplication of transpose by a vector
   Vector3<T> mul_transpose(const Vector3<T> &v) const;
 
-  // multiplication by a vector giving a Vector2 result (XY components)
+  // Multiplication by a vector giving a Vector2 result (XY components)
   Vector2<T> mulXY(const Vector3<T> &v) const;
 
-  // extract x column
+  // Extract x column
   Vector3<T> colx(void) const { return Vector3<T>(a.x, b.x, c.x); }
 
-  // extract y column
+  // Extract y column
   Vector3<T> coly(void) const { return Vector3<T>(a.y, b.y, c.y); }
 
-  // extract z column
+  // Extract z column
   Vector3<T> colz(void) const { return Vector3<T>(a.z, b.z, c.z); }
 
-  // multiplication by another Matrix3<T>
+  // Multiplication by another Matrix3<T>
   Matrix3<T> operator*(const Matrix3<T> &m) const;
 
   Matrix3<T> &operator*=(const Matrix3<T> &m) { return *this = *this * m; }
 
-  // transpose the matrix
+  // Transpose the matrix
   Matrix3<T> transposed(void) const;
 
   void transpose(void) { *this = transposed(); }
 
-  // zero the matrix
+  // Zero the matrix
   void zero(void);
 
-  // setup the identity matrix
-  void identity(void) {
+  // Setup the identity matrix
+  void identity(void)
+  {
     a.x = b.y = c.z = 1;
     a.y = a.z = 0;
     b.x = b.z = 0;
     c.x = c.y = 0;
   }
 
-  // check if any elements are NAN
+  // Check if any elements are NAN
   bool is_nan(void) { return a.is_nan() || b.is_nan() || c.is_nan(); }
 
-  // create a rotation matrix from Euler angles
+  // Create a rotation matrix from Euler angles
   void from_euler(float roll, float pitch, float yaw);
 
-  // create eulers from a rotation matrix
+  // Create eulers from a rotation matrix
   void to_euler(float *roll, float *pitch, float *yaw) const;
 
   /*
-    calculate Euler angles (312 convention) for the matrix.
+ Calculate Euler angles (312 convention) for the matrix.
     See http://www.atacolorado.com/eulersequences.doc
     vector is returned in r, p, y order
   */
   Vector3<T> to_euler312() const;
 
   /*
-    fill the matrix from Euler angles in radians in 312 convention
+ Fill the matrix from Euler angles in radians in 312 convention
   */
   void from_euler312(float roll, float pitch, float yaw);
 
-  // apply an additional rotation from a body frame gyro vector
+  // Apply an additional rotation from a body frame gyro vector
   // to a rotation matrix.
   void rotate(const Vector3<T> &g);
 
-  // apply an additional rotation from a body frame gyro vector
+  // Apply an additional rotation from a body frame gyro vector
   // to a rotation matrix but only use X, Y elements from gyro vector
   void rotateXY(const Vector3<T> &g);
 
-  // apply an additional inverse rotation to a rotation matrix but
+  // Apply an additional inverse rotation to a rotation matrix but
   // only use X, Y elements from rotation vector
   void rotateXYinv(const Vector3<T> &g);
 
-  // normalize a rotation matrix
+  // Normalize a rotation matrix
   void normalize(void);
 };
 typedef Matrix3<int16_t> Matrix3i;
@@ -189,6 +196,6 @@ typedef Matrix3<int32_t> Matrix3l;
 typedef Matrix3<uint32_t> Matrix3ul;
 typedef Matrix3<float> Matrix3f;
 typedef Matrix3<double> Matrix3d;
-};  // namespace ap
+}
 
 #endif  // MATRIX3_H

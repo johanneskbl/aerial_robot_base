@@ -1,4 +1,4 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
  * polygon.cpp
  * Copyright (C) Andrew Tridgell 2011
@@ -19,10 +19,11 @@
 
 #include "AP_Math.h"
 
-namespace ap {
+namespace ap
+{
 
 /*
- *  The point in polygon algorithm is based on:
+ * The point in polygon algorithm is based on:
  *  http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
  */
 
@@ -36,11 +37,14 @@ namespace ap {
  *  expect that to be very small over the distances involved in the
  *  fence boundary
  */
-bool Polygon_outside(const Vector2l &P, const Vector2l *V, unsigned n) {
+bool Polygon_outside(const Vector2l &P, const Vector2l *V, unsigned n)
+{
   unsigned i, j;
   bool outside = true;
-  for (i = 0, j = n - 1; i < n; j = i++) {
-    if ((V[i].y > P.y) == (V[j].y > P.y)) {
+  for (i = 0, j = n - 1; i < n; j = i++)
+  {
+    if ((V[i].y > P.y) == (V[j].y > P.y))
+    {
       continue;
     }
     int32_t dx1, dx2, dy1, dy2;
@@ -56,21 +60,34 @@ bool Polygon_outside(const Vector2l &P, const Vector2l *V, unsigned n) {
     dy2s = sign(dy2);
     m1 = dx1s * dy2s;
     m2 = dx2s * dy1s;
-    // we avoid the 64 bit multiplies if we can based on sign checks.
-    if (dy2 < 0) {
-      if (m1 > m2) {
-        outside = !outside;
-      } else if (m1 < m2) {
-        continue;
-      } else if (dx1 * (int64_t)dy2 > dx2 * (int64_t)dy1) {
+    // We avoid the 64 bit multiplies if we can based on sign checks.
+    if (dy2 < 0)
+    {
+      if (m1 > m2)
+      {
         outside = !outside;
       }
-    } else {
-      if (m1 < m2) {
-        outside = !outside;
-      } else if (m1 > m2) {
+      else if (m1 < m2)
+      {
         continue;
-      } else if (dx1 * (int64_t)dy2 < dx2 * (int64_t)dy1) {
+      }
+      else if (dx1 * (int64_t)dy2 > dx2 * (int64_t)dy1)
+      {
+        outside = !outside;
+      }
+    }
+    else
+    {
+      if (m1 < m2)
+      {
+        outside = !outside;
+      }
+      else if (m1 > m2)
+      {
+        continue;
+      }
+      else if (dx1 * (int64_t)dy2 < dx2 * (int64_t)dy1)
+      {
         outside = !outside;
       }
     }
@@ -79,13 +96,14 @@ bool Polygon_outside(const Vector2l &P, const Vector2l *V, unsigned n) {
 }
 
 /*
- *  check if a polygon is complete.
+ * Check if a polygon is complete.
  *
  *  We consider a polygon to be complete if we have at least 4 points,
  *  and the first point is the same as the last point. That is the
  *  minimum requirement for the Polygon_outside function to work
  */
-bool Polygon_complete(const Vector2l *V, unsigned n) {
+bool Polygon_complete(const Vector2l *V, unsigned n)
+{
   return (n >= 4 && V[n - 1].x == V[0].x && V[n - 1].y == V[0].y);
 }
-};  // namespace ap
+}

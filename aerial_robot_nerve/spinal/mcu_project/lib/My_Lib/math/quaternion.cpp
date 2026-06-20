@@ -1,4 +1,4 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
  * quaternion.cpp
  * Copyright (C) Andrew Tridgell 2012
@@ -24,10 +24,12 @@
 
 #include "AP_Math.h"
 
-namespace ap {
+namespace ap
+{
 
 // return the rotation matrix equivalent for this quaternion
-void Quaternion::rotation_matrix(Matrix3f &m) const {
+void Quaternion::rotation_matrix(Matrix3f &m) const
+{
   float q3q3 = q3 * q3;
   float q3q4 = q3 * q4;
   float q2q2 = q2 * q2;
@@ -52,7 +54,8 @@ void Quaternion::rotation_matrix(Matrix3f &m) const {
 // return the rotation matrix equivalent for this quaternion
 // Thanks to Martin John Baker
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-void Quaternion::from_rotation_matrix(const Matrix3f &m) {
+void Quaternion::from_rotation_matrix(const Matrix3f &m)
+{
   const float &m00 = m.a.x;
   const float &m11 = m.b.y;
   const float &m22 = m.c.z;
@@ -69,25 +72,32 @@ void Quaternion::from_rotation_matrix(const Matrix3f &m) {
 
   float tr = m00 + m11 + m22;
 
-  if (tr > 0) {
+  if (tr > 0)
+  {
     float S = sqrtf(tr + 1) * 2;
     qw = 0.25f * S;
     qx = (m21 - m12) / S;
     qy = (m02 - m20) / S;
     qz = (m10 - m01) / S;
-  } else if ((m00 > m11) && (m00 > m22)) {
+  }
+  else if ((m00 > m11) && (m00 > m22))
+  {
     float S = sqrtf(1.0f + m00 - m11 - m22) * 2;
     qw = (m21 - m12) / S;
     qx = 0.25f * S;
     qy = (m01 + m10) / S;
     qz = (m02 + m20) / S;
-  } else if (m11 > m22) {
+  }
+  else if (m11 > m22)
+  {
     float S = sqrtf(1.0f + m11 - m00 - m22) * 2;
     qw = (m02 - m20) / S;
     qx = (m01 + m10) / S;
     qy = 0.25f * S;
     qz = (m12 + m21) / S;
-  } else {
+  }
+  else
+  {
     float S = sqrtf(1.0f + m22 - m00 - m11) * 2;
     qw = (m10 - m01) / S;
     qx = (m02 + m20) / S;
@@ -96,15 +106,17 @@ void Quaternion::from_rotation_matrix(const Matrix3f &m) {
   }
 }
 
-// convert a vector from earth to body frame
-void Quaternion::earth_to_body(Vector3f &v) const {
+// Convert a vector from earth to body frame
+void Quaternion::earth_to_body(Vector3f &v) const
+{
   Matrix3f m;
   rotation_matrix(m);
   v = m * v;
 }
 
-// create a quaternion from Euler angles
-void Quaternion::from_euler(float roll, float pitch, float yaw) {
+// Create a quaternion from Euler angles
+void Quaternion::from_euler(float roll, float pitch, float yaw)
+{
   float cr2 = cosf(roll * 0.5f);
   float cp2 = cosf(pitch * 0.5f);
   float cy2 = cosf(yaw * 0.5f);
@@ -118,17 +130,20 @@ void Quaternion::from_euler(float roll, float pitch, float yaw) {
   q4 = cr2 * cp2 * sy2 - sr2 * sp2 * cy2;
 }
 
-// create a quaternion from Euler angles
-void Quaternion::from_vector312(float roll, float pitch, float yaw) {
+// Create a quaternion from Euler angles
+void Quaternion::from_vector312(float roll, float pitch, float yaw)
+{
   Matrix3f m;
   m.from_euler312(roll, pitch, yaw);
 
   from_rotation_matrix(m);
 }
 
-void Quaternion::from_axis_angle(Vector3f v) {
+void Quaternion::from_axis_angle(Vector3f v)
+{
   float theta = v.length();
-  if (theta < 1.0e-12f) {
+  if (theta < 1.0e-12f)
+  {
     q1 = 1.0f;
     q2 = q3 = q4 = 0.0f;
     return;
@@ -137,8 +152,10 @@ void Quaternion::from_axis_angle(Vector3f v) {
   from_axis_angle(v, theta);
 }
 
-void Quaternion::from_axis_angle(const Vector3f &axis, float theta) {
-  if (theta < 1.0e-12f) {
+void Quaternion::from_axis_angle(const Vector3f &axis, float theta)
+{
+  if (theta < 1.0e-12f)
+  {
     q1 = 1.0f;
     q2 = q3 = q4 = 0.0f;
   }
@@ -150,24 +167,29 @@ void Quaternion::from_axis_angle(const Vector3f &axis, float theta) {
   q4 = axis.z * st2;
 }
 
-void Quaternion::rotate(const Vector3f &v) {
+void Quaternion::rotate(const Vector3f &v)
+{
   Quaternion r;
   r.from_axis_angle(v);
   (*this) *= r;
 }
 
-void Quaternion::to_axis_angle(Vector3f &v) {
+void Quaternion::to_axis_angle(Vector3f &v)
+{
   float l = sqrt(sq(q2) + sq(q3) + sq(q4));
   v = Vector3f(q2, q3, q4);
-  if (l >= 1.0e-12f) {
+  if (l >= 1.0e-12f)
+  {
     v /= l;
     v *= wrap_PI(2.0f * atan2f(l, q1));
   }
 }
 
-void Quaternion::from_axis_angle_fast(Vector3f v) {
+void Quaternion::from_axis_angle_fast(Vector3f v)
+{
   float theta = v.length();
-  if (theta < 1.0e-12f) {
+  if (theta < 1.0e-12f)
+  {
     q1 = 1.0f;
     q2 = q3 = q4 = 0.0f;
   }
@@ -175,7 +197,8 @@ void Quaternion::from_axis_angle_fast(Vector3f v) {
   from_axis_angle_fast(v, theta);
 }
 
-void Quaternion::from_axis_angle_fast(const Vector3f &axis, float theta) {
+void Quaternion::from_axis_angle_fast(const Vector3f &axis, float theta)
+{
   float t2 = theta / 2.0f;
   float sqt2 = sq(t2);
   float st2 = t2 - sqt2 * t2 / 6.0f;
@@ -186,7 +209,8 @@ void Quaternion::from_axis_angle_fast(const Vector3f &axis, float theta) {
   q4 = axis.z * st2;
 }
 
-void Quaternion::rotate_fast(const Vector3f &v) {
+void Quaternion::rotate_fast(const Vector3f &v)
+{
   float theta = v.length();
   if (theta < 1.0e-12f) return;
   float t2 = theta / 2.0f;
@@ -200,39 +224,42 @@ void Quaternion::rotate_fast(const Vector3f &v) {
   float y2 = v.y * st2;
   float z2 = v.z * st2;
 
-  // copy our quaternion
+  // Copy our quaternion
   float w1 = q1;
   float x1 = q2;
   float y1 = q3;
   float z1 = q4;
 
-  // do the multiply into our quaternion
+  // Do the multiply into our quaternion
   q1 = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2;
   q2 = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2;
   q3 = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2;
   q4 = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2;
 }
 
-// get euler roll angle
-float Quaternion::get_euler_roll() const {
+// Get euler roll angle
+float Quaternion::get_euler_roll() const
+{
   return (atan2f(2.0f * (q1 * q2 + q3 * q4), 1 - 2.0f * (q2 * q2 + q3 * q3)));
 }
 
-// get euler pitch angle
+// Get euler pitch angle
 float Quaternion::get_euler_pitch() const { return safe_asin(2.0f * (q1 * q3 - q4 * q2)); }
 
-// get euler yaw angle
+// Get euler yaw angle
 float Quaternion::get_euler_yaw() const { return atan2f(2.0f * (q1 * q4 + q2 * q3), 1 - 2.0f * (q3 * q3 + q4 * q4)); }
 
-// create eulers from a quaternion
-void Quaternion::to_euler(float &roll, float &pitch, float &yaw) const {
+// Create eulers from a quaternion
+void Quaternion::to_euler(float &roll, float &pitch, float &yaw) const
+{
   roll = get_euler_roll();
   pitch = get_euler_pitch();
   yaw = get_euler_yaw();
 }
 
-// create eulers from a quaternion
-Vector3f Quaternion::to_vector312(void) const {
+// Create eulers from a quaternion
+Vector3f Quaternion::to_vector312(void) const
+{
   Matrix3f m;
   rotation_matrix(m);
   return m.to_euler312();
@@ -242,9 +269,11 @@ float Quaternion::length(void) const { return sqrtf(sq(q1) + sq(q2) + sq(q3) + s
 
 Quaternion Quaternion::inverse(void) const { return Quaternion(q1, -q2, -q3, -q4); }
 
-void Quaternion::normalize(void) {
+void Quaternion::normalize(void)
+{
   float quatMag = length();
-  if (quatMag > 1e-16f) {
+  if (quatMag > 1e-16f)
+  {
     float quatMagInv = 1.0f / quatMag;
     q1 *= quatMagInv;
     q2 *= quatMagInv;
@@ -253,7 +282,8 @@ void Quaternion::normalize(void) {
   }
 }
 
-Quaternion Quaternion::operator*(const Quaternion &v) const {
+Quaternion Quaternion::operator*(const Quaternion &v) const
+{
   Quaternion ret;
   const float &w1 = q1;
   const float &x1 = q2;
@@ -273,7 +303,8 @@ Quaternion Quaternion::operator*(const Quaternion &v) const {
   return ret;
 }
 
-Quaternion &Quaternion::operator*=(const Quaternion &v) {
+Quaternion &Quaternion::operator*=(const Quaternion &v)
+{
   float w1 = q1;
   float x1 = q2;
   float y1 = q3;
@@ -292,7 +323,8 @@ Quaternion &Quaternion::operator*=(const Quaternion &v) {
   return *this;
 }
 
-Quaternion Quaternion::operator/(const Quaternion &v) const {
+Quaternion Quaternion::operator/(const Quaternion &v) const
+{
   Quaternion ret;
   const float &quat0 = q1;
   const float &quat1 = q2;
@@ -310,4 +342,4 @@ Quaternion Quaternion::operator/(const Quaternion &v) const {
   ret.q4 = (rquat0 * quat3 - rquat1 * quat2 + rquat2 * quat1 - rquat3 * quat0);
   return ret;
 }
-};  // namespace ap
+}

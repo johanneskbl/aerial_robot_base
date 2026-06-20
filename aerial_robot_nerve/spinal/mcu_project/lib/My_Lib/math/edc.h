@@ -1,6 +1,6 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
-  This program is free software: you can redistribute it and/or modify
+ This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -23,8 +23,9 @@
 
 #include <inttypes.h>
 
-namespace ap {
+namespace ap
+{
 uint16_t crc16_ccitt(const uint8_t *buf, uint32_t len, uint16_t crc);
-};  // namespace ap
+};
 
 #endif

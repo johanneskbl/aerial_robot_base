@@ -1,4 +1,4 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
  * vector3.cpp
  * Copyright (C) Andrew Tridgell 2012
@@ -27,14 +27,16 @@
 
 #define HALF_SQRT_2 0.70710678118654757f
 
-namespace ap {
+namespace ap
+{
 
-// rotate a vector by a standard rotation, attempting
+// Rotate a vector by a standard rotation, attempting
 // to use the minimum number of floating point operations
-template <typename T>
-void Vector3<T>::rotate(enum Rotation rotation) {
+template <typename T> void Vector3<T>::rotate(enum Rotation rotation)
+{
   T tmp;
-  switch (rotation) {
+  switch (rotation)
+  {
     case ROTATION_NONE:
     case ROTATION_MAX:
       return;
@@ -323,8 +325,8 @@ void Vector3<T>::rotate(enum Rotation rotation) {
   }
 }
 
-template <typename T>
-void Vector3<T>::rotate_inverse(enum Rotation rotation) {
+template <typename T> void Vector3<T>::rotate_inverse(enum Rotation rotation)
+{
   Vector3<T> x_vec(1.0f, 0.0f, 0.0f);
   Vector3<T> y_vec(0.0f, 1.0f, 0.0f);
   Vector3<T> z_vec(0.0f, 0.0f, 1.0f);
@@ -338,124 +340,114 @@ void Vector3<T>::rotate_inverse(enum Rotation rotation) {
   (*this) = M.mul_transpose(*this);
 }
 
-// vector cross product
-template <typename T>
-Vector3<T> Vector3<T>::operator%(const Vector3<T> &v) const {
+// Vector cross product
+template <typename T> Vector3<T> Vector3<T>::operator%(const Vector3<T> &v) const
+{
   Vector3<T> temp(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
   return temp;
 }
 
-// dot product
-template <typename T>
-T Vector3<T>::operator*(const Vector3<T> &v) const {
-  return x * v.x + y * v.y + z * v.z;
-}
+// Dot product
+template <typename T> T Vector3<T>::operator*(const Vector3<T> &v) const { return x * v.x + y * v.y + z * v.z; }
 
-template <typename T>
-float Vector3<T>::length(void) const {
-  return pythagorous3(x, y, z);
-}
+template <typename T> float Vector3<T>::length(void) const { return pythagorous3(x, y, z); }
 
-template <typename T>
-Vector3<T> &Vector3<T>::operator*=(const T num) {
+template <typename T> Vector3<T> &Vector3<T>::operator*=(const T num)
+{
   x *= num;
   y *= num;
   z *= num;
   return *this;
 }
 
-template <typename T>
-Vector3<T> &Vector3<T>::operator/=(const T num) {
+template <typename T> Vector3<T> &Vector3<T>::operator/=(const T num)
+{
   x /= num;
   y /= num;
   z /= num;
   return *this;
 }
 
-template <typename T>
-Vector3<T> &Vector3<T>::operator-=(const Vector3<T> &v) {
+template <typename T> Vector3<T> &Vector3<T>::operator-=(const Vector3<T> &v)
+{
   x -= v.x;
   y -= v.y;
   z -= v.z;
   return *this;
 }
 
-template <typename T>
-Vector3<T> &Vector3<T>::operator+=(const Vector3<T> &v) {
+template <typename T> Vector3<T> &Vector3<T>::operator+=(const Vector3<T> &v)
+{
   x += v.x;
   y += v.y;
   z += v.z;
   return *this;
 }
 
-template <typename T>
-Vector3<T> Vector3<T>::operator/(const T num) const {
+template <typename T> Vector3<T> Vector3<T>::operator/(const T num) const
+{
   return Vector3<T>(x / num, y / num, z / num);
 }
 
-template <typename T>
-Vector3<T> Vector3<T>::operator*(const T num) const {
+template <typename T> Vector3<T> Vector3<T>::operator*(const T num) const
+{
   return Vector3<T>(x * num, y * num, z * num);
 }
 
-template <typename T>
-Vector3<T> Vector3<T>::operator-(const Vector3<T> &v) const {
+template <typename T> Vector3<T> Vector3<T>::operator-(const Vector3<T> &v) const
+{
   return Vector3<T>(x - v.x, y - v.y, z - v.z);
 }
 
-template <typename T>
-Vector3<T> Vector3<T>::operator+(const Vector3<T> &v) const {
+template <typename T> Vector3<T> Vector3<T>::operator+(const Vector3<T> &v) const
+{
   return Vector3<T>(x + v.x, y + v.y, z + v.z);
 }
 
-template <typename T>
-Vector3<T> Vector3<T>::operator-(void) const {
-  return Vector3<T>(-x, -y, -z);
-}
+template <typename T> Vector3<T> Vector3<T>::operator-(void) const { return Vector3<T>(-x, -y, -z); }
 
-template <typename T>
-bool Vector3<T>::operator==(const Vector3<T> &v) const {
+template <typename T> bool Vector3<T>::operator==(const Vector3<T> &v) const
+{
   return (is_equal(x, v.x) && is_equal(y, v.y) && is_equal(z, v.z));
 }
 
-template <typename T>
-bool Vector3<T>::operator!=(const Vector3<T> &v) const {
+template <typename T> bool Vector3<T>::operator!=(const Vector3<T> &v) const
+{
   return (!is_equal(x, v.x) || !is_equal(y, v.y) || !is_equal(z, v.z));
 }
 
-template <typename T>
-float Vector3<T>::angle(const Vector3<T> &v2) const {
+template <typename T> float Vector3<T>::angle(const Vector3<T> &v2) const
+{
   float len = this->length() * v2.length();
-  if (len <= 0) {
+  if (len <= 0)
+  {
     return 0.0f;
   }
   float cosv = ((*this) * v2) / len;
-  if (fabsf(cosv) >= 1) {
+  if (fabsf(cosv) >= 1)
+  {
     return 0.0f;
   }
   return acosf(cosv);
 }
 
-// multiplication of transpose by a vector
-template <typename T>
-Vector3<T> Vector3<T>::operator*(const Matrix3<T> &m) const {
+// Multiplication of transpose by a vector
+template <typename T> Vector3<T> Vector3<T>::operator*(const Matrix3<T> &m) const
+{
   return Vector3<T>(*this * m.colx(), *this * m.coly(), *this * m.colz());
 }
 
-// multiply a column vector by a row vector, returning a 3x3 matrix
-template <typename T>
-Matrix3<T> Vector3<T>::mul_rowcol(const Vector3<T> &v2) const {
+// Multiply a column vector by a row vector, returning a 3x3 matrix
+template <typename T> Matrix3<T> Vector3<T>::mul_rowcol(const Vector3<T> &v2) const
+{
   const Vector3<T> v1 = *this;
   return Matrix3<T>(v1.x * v2.x, v1.x * v2.y, v1.x * v2.z, v1.y * v2.x, v1.y * v2.y, v1.y * v2.z, v1.z * v2.x,
                     v1.z * v2.y, v1.z * v2.z);
 }
 
-template <typename T>
-bool Vector3<T>::is_nan(void) {
-  return isnan(x) || isnan(y) || isnan(z);
-}
+template <typename T> bool Vector3<T>::is_nan(void) { return isnan(x) || isnan(y) || isnan(z); }
 
-// only define for float
+// Only define for float
 template void Vector3<float>::rotate(enum Rotation);
 template void Vector3<float>::rotate_inverse(enum Rotation);
 template float Vector3<float>::length(void) const;
@@ -497,4 +489,4 @@ template Vector3<double> Vector3<double>::operator-(void) const;
 template bool Vector3<double>::operator==(const Vector3<double> &v) const;
 template bool Vector3<double>::operator!=(const Vector3<double> &v) const;
 template float Vector3<double>::angle(const Vector3<double> &v) const;
-};  // namespace ap
+}

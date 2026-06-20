@@ -1,4 +1,4 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
  * polygon.h
  * Copyright (C) Andrew Tridgell 2011
@@ -17,7 +17,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace ap {
+namespace ap
+{
 bool Polygon_outside(const Vector2l &P, const Vector2l *V, unsigned n);
 bool Polygon_complete(const Vector2l *V, unsigned n);
-};  // namespace ap
+}

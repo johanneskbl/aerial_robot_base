@@ -1,6 +1,6 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 /*
-  This program is free software: you can redistribute it and/or modify
+ This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -18,125 +18,149 @@
 #define VECTORN_H
 
 #include <math.h>
+#include <stdint.h>
 #include <string.h>
 #if MATH_CHECK_INDEXES
 #include <assert.h>
 #endif
 
-namespace ap {
+namespace ap
+{
 
-template <typename T, uint8_t N>
-class VectorN {
- public:
-  // trivial ctor
+template <typename T, uint8_t N> class VectorN
+{
+public:
+  // Trivial ctor
   inline VectorN<T, N>() { memset(_v, 0, sizeof(T) * N); }
 
-  inline T &operator[](uint8_t i) {
+  inline T &operator[](uint8_t i)
+  {
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < N);
 #endif
     return _v[i];
   }
 
-  inline const T &operator[](uint8_t i) const {
+  inline const T &operator[](uint8_t i) const
+  {
 #if MATH_CHECK_INDEXES
     assert(i >= 0 && i < N);
 #endif
     return _v[i];
   }
 
-  // test for equality
-  bool operator==(const VectorN<T, N> &v) const {
-    for (uint8_t i = 0; i < N; i++) {
+  // Test for equality
+  bool operator==(const VectorN<T, N> &v) const
+  {
+    for (uint8_t i = 0; i < N; i++)
+    {
       if (_v[i] != v[i]) return false;
     }
     return true;
   }
 
-  // zero the vector
+  // Zero the vector
   inline void zero() { memset(_v, 0, sizeof(T) * N); }
 
-  // negation
-  VectorN<T, N> operator-(void) const {
+  // Negation
+  VectorN<T, N> operator-(void) const
+  {
     VectorN<T, N> v2;
-    for (uint8_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++)
+    {
       v2[i] = -_v[i];
     }
     return v2;
   }
 
-  // addition
-  VectorN<T, N> operator+(const VectorN<T, N> &v) const {
+  // Addition
+  VectorN<T, N> operator+(const VectorN<T, N> &v) const
+  {
     VectorN<T, N> v2;
-    for (uint8_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++)
+    {
       v2[i] = _v[i] + v[i];
     }
     return v2;
   }
 
-  // subtraction
-  VectorN<T, N> operator-(const VectorN<T, N> &v) const {
+  // Subtraction
+  VectorN<T, N> operator-(const VectorN<T, N> &v) const
+  {
     VectorN<T, N> v2;
-    for (uint8_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++)
+    {
       v2[i] = _v[i] - v[i];
     }
     return v2;
   }
 
-  // uniform scaling
-  VectorN<T, N> operator*(const T num) const {
+  // Uniform scaling
+  VectorN<T, N> operator*(const T num) const
+  {
     VectorN<T, N> v2;
-    for (uint8_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++)
+    {
       v2[i] = _v[i] * num;
     }
     return v2;
   }
 
-  // uniform scaling
-  VectorN<T, N> operator/(const T num) const {
+  // Uniform scaling
+  VectorN<T, N> operator/(const T num) const
+  {
     VectorN<T, N> v2;
-    for (uint8_t i = 0; i < N; i++) {
+    for (uint8_t i = 0; i < N; i++)
+    {
       v2[i] = _v[i] / num;
     }
     return v2;
   }
 
-  // addition
-  VectorN<T, N> &operator+=(const VectorN<T, N> &v) {
-    for (uint8_t i = 0; i < N; i++) {
+  // Addition
+  VectorN<T, N> &operator+=(const VectorN<T, N> &v)
+  {
+    for (uint8_t i = 0; i < N; i++)
+    {
       _v[i] += v[i];
     }
     return *this;
   }
 
-  // subtraction
-  VectorN<T, N> &operator-=(const VectorN<T, N> &v) {
-    for (uint8_t i = 0; i < N; i++) {
+  // Subtraction
+  VectorN<T, N> &operator-=(const VectorN<T, N> &v)
+  {
+    for (uint8_t i = 0; i < N; i++)
+    {
       _v[i] -= v[i];
     }
     return *this;
   }
 
-  // uniform scaling
-  VectorN<T, N> &operator*=(const T num) {
-    for (uint8_t i = 0; i < N; i++) {
+  // Uniform scaling
+  VectorN<T, N> &operator*=(const T num)
+  {
+    for (uint8_t i = 0; i < N; i++)
+    {
       _v[i] *= num;
     }
     return *this;
   }
 
-  // uniform scaling
-  VectorN<T, N> &operator/=(const T num) {
-    for (uint8_t i = 0; i < N; i++) {
+  // Uniform scaling
+  VectorN<T, N> &operator/=(const T num)
+  {
+    for (uint8_t i = 0; i < N; i++)
+    {
       _v[i] /= num;
     }
     return *this;
   }
 
- private:
+private:
   T _v[N];
 };
 
-};  // namespace ap
+}
 
 #endif  // VECTORN_H
