@@ -130,6 +130,8 @@ def _capitalize_comment_text(text: str) -> str:
         first_word_lower = first_word.lower()
         if "_" in first_word:
             return text
+        if len(first_word) <= 2:
+            return text
         if stripped[len(first_word) :].startswith("."):
             return text
         if first_word_lower == "ros":

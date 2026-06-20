@@ -1,0 +1,11 @@
+/**:
+  ros__parameters:
+    zeros:
+      rotor1: 0.0
+      rotor2: 0.0
+      rotor3: 0.0
+      rotor4: 0.0
+      rotor5: 0.0
+      rotor6: 0.0
+      rotor7: 0.0
+      rotor8: 0.0

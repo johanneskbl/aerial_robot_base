@@ -6,7 +6,7 @@
   <description>
     URDF model for the hydrus.
   </description>
-  <maintainer email="TODO@TODO.com">TODO</maintainer>
+  <maintainer email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</maintainer>
   <license>BSD-3</license>
   <author email="j-sugihara@dragon.t.u-tokyo.ac.jp">Junichiro Sugihara</author>
 

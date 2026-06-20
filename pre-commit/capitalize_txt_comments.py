@@ -78,6 +78,9 @@ def _capitalize_first_alpha(text: str) -> str:
     For separator-style comments like "--- header ---", we still want to
     capitalise the first *alphabetic* character ("--- Header ---").
     """
+    m = re.search(r"[a-zA-Z_]\w*", text)
+    if m and len(m.group(0)) <= 2:
+        return text
 
     for i, ch in enumerate(text):
         if ch.isalpha():

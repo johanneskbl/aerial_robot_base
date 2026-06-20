@@ -58,6 +58,8 @@ def _capitalize_comment_text(text: str) -> str:
     if m:
         if "_" in m.group(0):
             return text
+        if len(m.group(0)) <= 2:
+            return text
         if m.group(0).lower() == "ros":
             return " ROS" + text[m.end() :]
 
