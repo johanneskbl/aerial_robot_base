@@ -1,0 +1,30 @@
+mini_quadrotor:
+  # With lidar and battery
+  Simulation:
+    mass: 1.05642  # Kg
+    g: 9.80665  # M/s^2
+    Ixx: 0.00387334  # Kg*m^2
+    Iyy: 0.00407316  # Kg*m^2
+    Izz: 0.00529428  # Kg*m^2
+    Ixy: 1.50847e-08  # Kg*m^2
+  Experiment:
+    mass: 1.086
+    g: 9.798  # M/s^2  Tokyo
+    Ixx: 0.0086  # Kg*m^2
+    Iyy: 0.0087 # Kg*m^2
+    Izz:
+    Ixy: 0  # Kg*m^2 difficult to measure through experiment
+
+beetle_art:
+  Simulation:  # With outer shell
+    mass: 2.99194  # Kg
+    g: 9.80665  # M/s^2
+    Ixx: 0.0621273  # Kg*m^2
+    Iyy: 0.0927884  # Kg*m^2
+    Izz: 0.130061  # Kg*m^2
+  Experiment:
+    mass: 2.773 # Kg
+    g: 9.798  # M/s^2  Tokyo
+    Ixx: 0.04170  # Kg*m^2   0.04242, 0.04098
+    Iyy: 0.03945   # Kg*m^2    0.03866, 0.04025
+    Izz: 0.07068  # Kg*m^2    0.07134, 0.07001

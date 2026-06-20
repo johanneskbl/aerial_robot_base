@@ -171,11 +171,13 @@ def _process_block_comment(raw: str) -> str:
             m = re.match(r"^([ \t]*\*?)(.*?)(\s*)$", line, re.DOTALL)
             if m:
                 lead, body, trail = m.group(1), m.group(2), m.group(3)
-                # If body begins with alpha, _capitalize_comment_text handles the single space.
-                # If lead ends in spaces, we drop them so we don't double-space.
+                new_body = _capitalize_comment_text(body)
+                # Only strip trailing spaces from lead when _capitalize_comment_text
+                # added its own leading space, to avoid double-spacing.
                 if body and body.lstrip(" \t") and body.lstrip(" \t")[0].isalpha():
-                    lead = lead.rstrip(" \t")
-                result_lines.append(lead + _capitalize_comment_text(body) + trail)
+                    if new_body.startswith(" "):
+                        lead = lead.rstrip(" \t")
+                result_lines.append(lead + new_body + trail)
                 if any(c.isalpha() for c in body):
                     capitalized = True
             else:
