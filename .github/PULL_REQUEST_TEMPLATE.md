@@ -1,4 +1,4 @@
-## WHAT IS THIS PR?
+## What is this PR
 [Please briefly explain the purpose and the result of this PR.]
 
 ### Details
@@ -11,10 +11,9 @@
 ### To-Do
 [If there is still some work to do, please list all open TODOs]:
 
-- [ ] todo1
-- [ ] todo2
-- [ ] todo3
-
+- [ ] To-Do 1
+- [ ] To-Do 2
+- [ ] To-Do 3
 
 ### Video
 For better understanding please attach a video if applicable.

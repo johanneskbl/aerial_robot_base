@@ -1,27 +1,54 @@
+# The DRAGON repository
+### Our repository handles the control of aerial robots - especially for transformable aerial robots such as DRAGON, SPIDAR, and Hydrus.
+![uav_intro](images/multilink-all.jpg)
+
 ## Setup
+!!! Warning: You cannot install ROS 1 and ROS 2 on the same machine. Please use a Docker container or remove ROS 1 beforehand.
 ### Ubuntu 22.04
-#### Install ROS2 Humble from official site
-- https://docs.ros.org/en/humble/Installation.html
-#### Build
+Clone repository
 ```bash
-source /opt/ros/${ROS_DISTRO}/setup.bash
-sudo apt update
-# Install Python tools
-sudo apt install -y python3-vcstool python3-colcon-common-extensions python3-colcon-clean gdb clang-format
-# Install format tools
-pip install pre-commit black
-# Create workspace
+git clone https://github.com/ut-dragon-lab/aerial_robot_base
+```
+Run our prebuild bash script to install ROS 2 Humble and other dependencies
+```bash
+source configure.sh
+```
+Create your workspace
+```bash
 mkdir -p ~/ros2/aerial_robot_base_ws/src
 cd ~/ros2/aerial_robot_base_ws
 sudo rosdep init
 rosdep update
-# install repository
-vcs import src --input https://raw.githubusercontent.com/ut-dragon-lab/aerial_robot_base/master/aerial_robot_base.repos
-# Install depended repositories
+```
+Install depended repositories
+```bash
 vcs import src < src/aerial_robot_base/aerial_robot_${ROS_DISTRO}.repos
 rosdep install -y -r --from-paths src --ignore-src --rosdistro ${ROS_DISTRO}
+```
+Build the workspace
+```bash
 colcon build --symlink-install
-# Setup pre-commit formatting
+source install/setup.bash
+```
+
+Setup pre-commit formatting
+```bash
 cd ~/ros2/aerial_robot_base_ws/src/aerial_robot_base
 pre-commit install
 ```
+
+For convenience, add the following line to your `~/.bashrc` file
+```bash
+echo "source ~/ros2/aerial_robot_base_ws/install/setup.bash" >> ~/.bashrc
+```
+
+## Docker
+For using Docker, here is a convenient Dockerfile provided [https://github.com/johanneskbl/ros2_docker](https://github.com/johanneskbl/ros2_docker).
+
+To authenticate the Docker user on your local machine to access the X (Display) server, run
+```bash
+xhost +local:root
+```
+
+## Run
+To run simulation and real-machine, please check the instructions in our [wiki](https://github.com/ut-dragon-lab/aerial_robot_base/wiki).
