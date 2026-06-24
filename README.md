@@ -42,6 +42,9 @@ For convenience, add the following line to your `~/.bashrc` file
 echo "source ~/ros2/aerial_robot_base_ws/install/setup.bash" >> ~/.bashrc
 ```
 
+## Build firmware
+Please refer to this [repository](https://github.com/ut-dragon-lab/aerial_robot_nerve#) for instructions on the build procedure.
+
 ## Docker
 For using Docker, here is a convenient Dockerfile provided [https://github.com/johanneskbl/ros2_docker](https://github.com/johanneskbl/ros2_docker).
 

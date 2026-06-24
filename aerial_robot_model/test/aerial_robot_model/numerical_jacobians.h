@@ -67,7 +67,7 @@ public:
 
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::ConstSharedPtr msg);
-  void desireCoordinateCallback(const spinal::msg::DesireCoord::ConstSharedPtr msg);
+  void desireCoordinateCallback(const spinal_msgs::msg::DesireCoord::ConstSharedPtr msg);
 
   transformable::RobotModel &getRobotModel() const { return *robot_model_; }
 
@@ -77,7 +77,7 @@ protected:
   std::vector<Eigen::MatrixXd> feasibleControlNumericalJacobian(std::vector<int> joint_indices);
 
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
-  rclcpp::Subscription<spinal::msg::DesireCoord>::SharedPtr desire_coordinate_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::DesireCoord>::SharedPtr desire_coordinate_sub_;
 
   std::unique_ptr<transformable::RobotModel> robot_model_;
 

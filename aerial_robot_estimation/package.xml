@@ -29,6 +29,7 @@
   <depend>aerial_robot_model</depend>
   <depend>aerial_robot_msgs</depend>
   <depend>spinal</depend>
+  <depend>spinal_msgs</depend>
 
   <!-- Linters -->
   <test_depend>ament_lint_auto</test_depend>

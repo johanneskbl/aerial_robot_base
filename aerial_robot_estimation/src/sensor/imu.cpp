@@ -73,8 +73,8 @@ void Imu::initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aerial_robot_
 
   std::string topic_name;
   getParam<std::string>("imu_topic_name", topic_name, "imu");
-  imu_sub_ = node_->create_subscription<spinal::msg::Imu>(topic_name, rclcpp::SystemDefaultsQoS(),
-                                                          std::bind(&Imu::imuCallback, this, std::placeholders::_1));
+  imu_sub_ = node_->create_subscription<spinal_msgs::msg::Imu>(
+      topic_name, rclcpp::SystemDefaultsQoS(), std::bind(&Imu::imuCallback, this, std::placeholders::_1));
 
   topic_name = sensor_name + std::to_string(index) + "/ros/imu";
   ros_imu_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>(topic_name, rclcpp::SystemDefaultsQoS());
@@ -83,7 +83,7 @@ void Imu::initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aerial_robot_
   state_pub_ = node_->create_publisher<aerial_robot_msgs::msg::States>(topic_name, rclcpp::SystemDefaultsQoS());
 }
 
-void Imu::imuCallback(const spinal::msg::Imu::SharedPtr msg)
+void Imu::imuCallback(const spinal_msgs::msg::Imu::SharedPtr msg)
 {
   // Check the validity first
   for (int i = 0; i < 3; i++)

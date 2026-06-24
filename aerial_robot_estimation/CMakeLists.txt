@@ -21,6 +21,7 @@ find_package(kalman_filter REQUIRED)
 find_package(aerial_robot_model REQUIRED)
 find_package(aerial_robot_msgs REQUIRED)
 find_package(spinal REQUIRED)
+find_package(spinal_msgs REQUIRED)
 
 set(ROS_DEPENDENCIES
   rclcpp
@@ -37,6 +38,7 @@ set(ROS_DEPENDENCIES
   aerial_robot_model
   aerial_robot_msgs
   spinal
+  spinal_msgs
 )
 
 # --- Build aerial_robot_estimation library ---

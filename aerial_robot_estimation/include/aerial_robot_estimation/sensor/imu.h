@@ -40,7 +40,7 @@
 
 /* Aerial robot packages */
 #include "aerial_robot_msgs/msg/states.hpp"
-#include "spinal/msg/imu.hpp"
+#include "spinal_msgs/msg/imu.hpp"
 
 
 namespace sensor_plugin
@@ -56,7 +56,7 @@ public:
   Imu();
 
 protected:
-  rclcpp::Subscription<spinal::msg::Imu>::SharedPtr imu_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::Imu>::SharedPtr imu_sub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr ros_imu_pub_;
   rclcpp::Publisher<aerial_robot_msgs::msg::States>::SharedPtr state_pub_;
 
@@ -87,7 +87,7 @@ protected:
   /* Orientation */
   std::array<KDL::Rotation, 2> cog_rot_, base_rot_;
 
-  virtual void imuCallback(const spinal::msg::Imu::SharedPtr msg);
+  virtual void imuCallback(const spinal_msgs::msg::Imu::SharedPtr msg);
   virtual void estimateProcess() override;
 
   void updateAcc();
