@@ -45,6 +45,8 @@ echo "source ~/ros2/aerial_robot_base_ws/install/setup.bash" >> ~/.bashrc
 ## Build firmware
 Please refer to this [repository](https://github.com/ut-dragon-lab/aerial_robot_nerve#) for instructions on the build procedure.
 
+NOTE: Building `micro_ros_agent` for the first time throws an error about not finding the `FindTinyXML2` package. This is a known issue and can be ignored. The build will succeed after the first attempt.
+
 ## Docker
 For using Docker, here is a convenient Dockerfile provided [https://github.com/johanneskbl/ros2_docker](https://github.com/johanneskbl/ros2_docker).
 
