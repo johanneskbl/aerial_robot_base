@@ -92,11 +92,11 @@ void Gps::initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aerial_robot_
   /* ROS subscriber for gps */
   std::string topic_name;
   getParam<std::string>("gps_sub_name", topic_name, std::string("gps"));
-  gps_sub_ = node_->create_subscription<spinal::msg::Gps>(topic_name, rclcpp::SystemDefaultsQoS(),
-                                                          std::bind(&Gps::gpsCallback, this, std::placeholders::_1));
+  gps_sub_ = node_->create_subscription<spinal_msgs::msg::Gps>(
+      topic_name, rclcpp::SystemDefaultsQoS(), std::bind(&Gps::gpsCallback, this, std::placeholders::_1));
 
   getParam<std::string>("gps_full_sub_name", topic_name, std::string("gps_full"));
-  // gps_full_sub_ = node_->create_subscription<spinal::msg::GpsFull>(
+  // gps_full_sub_ = node_->create_subscription<spinal_msgs::msg::GpsFull>(
   //   topic_name, rclcpp::SystemDefaultsQoS(), std::bind(&Gps::gpsFullCallback, this, std::placeholders::_1));
 
   getParam<std::string>("gps_ros_sub_name", topic_name, std::string("ros_fix"));
@@ -137,7 +137,7 @@ void Gps::rosParamInit()
     only_use_pos_ = false;
 }
 
-void Gps::gpsCallback(const spinal::msg::Gps::SharedPtr gps_msg)
+void Gps::gpsCallback(const spinal_msgs::msg::Gps::SharedPtr gps_msg)
 {
   if (!updateBase2SensorTF()) return;
 
@@ -240,7 +240,7 @@ void Gps::gpsCallback(const spinal::msg::Gps::SharedPtr gps_msg)
   updateHealthStamp();
 }
 
-void Gps::gpsFullCallback(const spinal::msg::GpsFull::SharedPtr gps_full_msg)
+void Gps::gpsFullCallback(const spinal_msgs::msg::GpsFull::SharedPtr gps_full_msg)
 {
   /* Time */
   struct tm time = { 0 };
@@ -266,7 +266,7 @@ void Gps::gpsFullCallback(const spinal::msg::GpsFull::SharedPtr gps_full_msg)
   RCLCPP_DEBUG(logger_, "[GPS] UTC time %f; spinal time: %f", fix_ros_time,
                rclcpp::Time(gps_full_msg->stamp).seconds() + delay_);
 
-  auto gps_msg = std::make_shared<spinal::msg::Gps>();
+  auto gps_msg = std::make_shared<spinal_msgs::msg::Gps>();
   gps_msg->stamp = gps_full_msg->stamp;
   gps_msg->location[0] = gps_full_msg->location[0];
   gps_msg->location[1] = gps_full_msg->location[1];
@@ -280,7 +280,7 @@ void Gps::gpsFullCallback(const spinal::msg::GpsFull::SharedPtr gps_full_msg)
 void Gps::gpsRosCallback(const sensor_msgs::msg::NavSatFix::SharedPtr gps_msg)
 {
   /* TODO: add velocity */
-  auto spinal_gps_msg = std::make_shared<spinal::msg::Gps>();
+  auto spinal_gps_msg = std::make_shared<spinal_msgs::msg::Gps>();
   spinal_gps_msg->stamp = gps_msg->header.stamp;
   spinal_gps_msg->location[0] = gps_msg->latitude;
   spinal_gps_msg->location[1] = gps_msg->longitude;

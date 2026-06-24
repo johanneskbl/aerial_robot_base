@@ -41,8 +41,8 @@ void ControlBase::initialize(rclcpp::Node::SharedPtr node, std::shared_ptr<aeria
                              std::shared_ptr<aerial_robot_navigation::NavigationBase> navigator, double ctrl_loop_dt)
 {
   node_ = node;
-  motor_info_pub_ = node_->create_publisher<spinal::msg::PwmInfo>("motor_info", 10);
-  uav_info_pub_ = node_->create_publisher<spinal::msg::UavInfo>("uav_info", 10);
+  motor_info_pub_ = node_->create_publisher<spinal_msgs::msg::PwmInfo>("motor_info", 10);
+  uav_info_pub_ = node_->create_publisher<spinal_msgs::msg::UavInfo>("uav_info", 10);
 
   robot_model_ = robot_model;
   estimator_ = estimator;
@@ -115,7 +115,7 @@ void ControlBase::activate()
   if (node_->now().seconds() - activate_timestamp_ > 0.1)
   {
     // Send motor and UAV info to UAV at ~10 Hz
-    spinal::msg::PwmInfo motor_info_msg;
+    spinal_msgs::msg::PwmInfo motor_info_msg;
     motor_info_msg.max_pwm = max_pwm_;
     motor_info_msg.min_pwm = min_pwm_;
     motor_info_msg.min_thrust = min_thrust_;
@@ -125,7 +125,7 @@ void ControlBase::activate()
     for (size_t i = 0; i < motor_info_.size(); i++) motor_info_msg.motor_info.push_back(motor_info_[i]);
     motor_info_pub_->publish(motor_info_msg);
 
-    spinal::msg::UavInfo uav_info_msg;
+    spinal_msgs::msg::UavInfo uav_info_msg;
     uav_info_msg.motor_num = motor_num_;
     uav_info_msg.uav_model = uav_model_;
     uav_info_pub_->publish(uav_info_msg);

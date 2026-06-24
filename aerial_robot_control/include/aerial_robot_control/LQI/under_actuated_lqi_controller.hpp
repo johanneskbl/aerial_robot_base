@@ -37,9 +37,9 @@
 #include "aerial_robot_control/PID/pose_pid_controller_base.hpp"
 #include "aerial_robot_control/LQI/care.hpp"
 #include "aerial_robot_msgs/msg/four_axis_gain.hpp"
-#include "spinal/msg/four_axis_command.hpp"
-#include "spinal/msg/roll_pitch_yaw_terms.hpp"
-#include "spinal/msg/p_matrix_pseudo_inverse_with_inertia.hpp"
+#include "spinal_msgs/msg/four_axis_command.hpp"
+#include "spinal_msgs/msg/roll_pitch_yaw_terms.hpp"
+#include "spinal_msgs/msg/p_matrix_pseudo_inverse_with_inertia.hpp"
 
 
 namespace aerial_robot_control
@@ -58,10 +58,10 @@ public:
   void activate() override;
 
 protected:
-  rclcpp::Publisher<spinal::msg::FourAxisCommand>::SharedPtr flight_cmd_pub_;  // for spinal
-  rclcpp::Publisher<spinal::msg::RollPitchYawTerms>::SharedPtr rpy_gain_pub_;  // for spinal
+  rclcpp::Publisher<spinal_msgs::msg::FourAxisCommand>::SharedPtr flight_cmd_pub_;  // for spinal
+  rclcpp::Publisher<spinal_msgs::msg::RollPitchYawTerms>::SharedPtr rpy_gain_pub_;  // for spinal
   rclcpp::Publisher<aerial_robot_msgs::msg::FourAxisGain>::SharedPtr four_axis_gain_pub_;
-  rclcpp::Publisher<spinal::msg::PMatrixPseudoInverseWithInertia>::SharedPtr p_matrix_pseudo_inverse_inertia_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::PMatrixPseudoInverseWithInertia>::SharedPtr p_matrix_pseudo_inverse_inertia_pub_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_handle_;
 
   std::thread gain_generator_thread_;

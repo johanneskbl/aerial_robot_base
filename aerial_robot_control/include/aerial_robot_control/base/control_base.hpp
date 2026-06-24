@@ -37,8 +37,8 @@
 #include "aerial_robot_model/model/aerial_robot_model.h"
 #include "aerial_robot_estimation/state_estimation.h"
 #include "aerial_robot_navigation/flight_navigation.hpp"
-#include "spinal/msg/pwm_info.hpp"
-#include "spinal/msg/uav_info.hpp"
+#include "spinal_msgs/msg/pwm_info.hpp"
+#include "spinal_msgs/msg/uav_info.hpp"
 
 
 namespace aerial_robot_control
@@ -65,8 +65,8 @@ protected:
   rclcpp::Node::SharedPtr node_;
 
   /* Publishers */
-  rclcpp::Publisher<spinal::msg::PwmInfo>::SharedPtr motor_info_pub_;
-  rclcpp::Publisher<spinal::msg::UavInfo>::SharedPtr uav_info_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::PwmInfo>::SharedPtr motor_info_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::UavInfo>::SharedPtr uav_info_pub_;
 
   /* API handles */
   std::shared_ptr<aerial_robot_model::RobotModel> robot_model_;
@@ -88,7 +88,7 @@ protected:
   double min_thrust_;
   double force_landing_thrust_;  // PWM
   int vel_ref_num;
-  std::vector<spinal::msg::MotorInfo> motor_info_;
+  std::vector<spinal_msgs::msg::MotorInfo> motor_info_;
 
   bool param_verbose_;
 

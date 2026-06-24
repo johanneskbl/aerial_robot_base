@@ -44,7 +44,7 @@
 
 /* Aerial robot packages */
 #include "aerial_robot_estimation/sensor/base_plugin.h"
-#include "spinal/msg/barometer.hpp"
+#include "spinal_msgs/msg/barometer.hpp"
 
 namespace sensor_plugin
 {
@@ -88,8 +88,8 @@ private:
   /* Range sensor */
   rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr range_sensor_sub_;
   /* Barometer */
-  rclcpp::Subscription<spinal::msg::Barometer>::SharedPtr barometer_sub_;
-  rclcpp::Publisher<spinal::msg::Barometer>::SharedPtr barometer_pub_;
+  rclcpp::Subscription<spinal_msgs::msg::Barometer>::SharedPtr barometer_sub_;
+  rclcpp::Publisher<spinal_msgs::msg::Barometer>::SharedPtr barometer_pub_;
 
   /* ROS param */
   /* Range sensor */
@@ -147,7 +147,7 @@ private:
   void rangeCallback(const sensor_msgs::msg::Range::SharedPtr range_msg);
   void rangeEstimateProcess();
   bool terrainProcess(double current_secs);
-  void baroCallback(const spinal::msg::Barometer::SharedPtr baro_msg);
+  void baroCallback(const spinal_msgs::msg::Barometer::SharedPtr baro_msg);
   void baroEstimateProcess(rclcpp::Time stamp);
   void altEstimateModeCallback(const std_msgs::msg::UInt8::SharedPtr mode_msg);
   void rosParamInit() override;

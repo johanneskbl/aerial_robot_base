@@ -59,9 +59,9 @@ void UnderActuatedPIDController::initialize(rclcpp::Node::SharedPtr node,
   z_limit_ = pid_controllers_.at(Z).getLimitSum();
   pid_controllers_.at(Z).setLimitSum(1e6);  // Do not clamp the sum of PID terms for z axis
 
-  rpy_gain_pub_ = node->create_publisher<spinal::msg::RollPitchYawTerms>("rpy/gain", 1);
-  flight_cmd_pub_ = node->create_publisher<spinal::msg::FourAxisCommand>("four_axes/command", 1);
-  torque_allocation_matrix_inv_pub_ = node->create_publisher<spinal::msg::TorqueAllocationMatrixInv>(
+  rpy_gain_pub_ = node->create_publisher<spinal_msgs::msg::RollPitchYawTerms>("rpy/gain", 1);
+  flight_cmd_pub_ = node->create_publisher<spinal_msgs::msg::FourAxisCommand>("four_axes/command", 1);
+  torque_allocation_matrix_inv_pub_ = node->create_publisher<spinal_msgs::msg::TorqueAllocationMatrixInv>(
       "torque_allocation_matrix_inv", 1);
 }
 
@@ -144,7 +144,7 @@ void UnderActuatedPIDController::sendCmd()
 
 void UnderActuatedPIDController::sendFourAxisCommand()
 {
-  spinal::msg::FourAxisCommand flight_command_data;
+  spinal_msgs::msg::FourAxisCommand flight_command_data;
   flight_command_data.angles[0] = target_roll_;
   flight_command_data.angles[1] = target_pitch_;
   flight_command_data.angles[2] = candidate_yaw_term_;
@@ -158,7 +158,7 @@ void UnderActuatedPIDController::sendTorqueAllocationMatrixInv()
   {
     torque_allocation_matrix_inv_pub_stamp_ = node_->now().seconds();
 
-    spinal::msg::TorqueAllocationMatrixInv torque_allocation_matrix_inv_msg;
+    spinal_msgs::msg::TorqueAllocationMatrixInv torque_allocation_matrix_inv_msg;
     torque_allocation_matrix_inv_msg.rows.resize(motor_num_);
     Eigen::MatrixXd torque_allocation_matrix_inv = q_mat_inv_.rightCols(3);
     if (torque_allocation_matrix_inv.cwiseAbs().maxCoeff() > INT16_MAX * 0.001f)
@@ -184,7 +184,7 @@ void UnderActuatedPIDController::reset()
 
 void UnderActuatedPIDController::setAttitudeGains()
 {
-  spinal::msg::RollPitchYawTerms rpy_gain_msg;  // for rosserial
+  spinal_msgs::msg::RollPitchYawTerms rpy_gain_msg;  // for rosserial
   /* Send to flight controller via rosserial scaling by 1000 */
   rpy_gain_msg.motors.resize(1);
   rpy_gain_msg.motors.at(0).roll_p = pid_controllers_.at(ROLL).getPGain() * 1000;

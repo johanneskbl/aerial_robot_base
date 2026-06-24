@@ -38,7 +38,7 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <spinal/msg/desire_coord.hpp>
+#include <spinal_msgs/msg/desire_coord.hpp>
 #include <vector>
 
 #include "aerial_robot_model/model/transformable_aerial_robot_model.h"

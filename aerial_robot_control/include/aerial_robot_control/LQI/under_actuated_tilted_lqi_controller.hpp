@@ -35,7 +35,7 @@
 
 /* Aerial robot packages */
 #include "aerial_robot_control/LQI/under_actuated_lqi_controller.hpp"
-#include "spinal/msg/desire_coord.hpp"
+#include "spinal_msgs/msg/desire_coord.hpp"
 
 
 namespace aerial_robot_control
@@ -51,7 +51,7 @@ public:
                   std::shared_ptr<aerial_robot_navigation::NavigationBase> navigator, double ctrl_loop_dt);
 
 protected:
-  rclcpp::Publisher<spinal::msg::DesireCoord>::SharedPtr desired_baselink_rot_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::DesireCoord>::SharedPtr desired_baselink_rot_pub_;
 
   tf2::Vector3 target_acc_w_;
   double trans_constraint_weight_;

@@ -36,9 +36,9 @@
 /* Aerial robot packages */
 #include "aerial_robot_control/PID/pose_pid_controller_base.hpp"
 #include "aerial_robot_msgs/msg/wrench_allocation_matrix.hpp"
-#include "spinal/msg/four_axis_command.hpp"
-#include "spinal/msg/roll_pitch_yaw_terms.hpp"
-#include "spinal/msg/torque_allocation_matrix_inv.hpp"
+#include "spinal_msgs/msg/four_axis_command.hpp"
+#include "spinal_msgs/msg/roll_pitch_yaw_terms.hpp"
+#include "spinal_msgs/msg/torque_allocation_matrix_inv.hpp"
 
 
 namespace aerial_robot_control
@@ -58,9 +58,10 @@ public:
   // For update() use implementation in parent class
 
 protected:
-  rclcpp::Publisher<spinal::msg::FourAxisCommand>::SharedPtr flight_cmd_pub_;                              // for spinal
-  rclcpp::Publisher<spinal::msg::RollPitchYawTerms>::SharedPtr rpy_gain_pub_;                              // for spinal
-  rclcpp::Publisher<spinal::msg::TorqueAllocationMatrixInv>::SharedPtr torque_allocation_matrix_inv_pub_;  // for spinal
+  rclcpp::Publisher<spinal_msgs::msg::FourAxisCommand>::SharedPtr flight_cmd_pub_;  // for spinal
+  rclcpp::Publisher<spinal_msgs::msg::RollPitchYawTerms>::SharedPtr rpy_gain_pub_;  // for spinal
+  rclcpp::Publisher<spinal_msgs::msg::TorqueAllocationMatrixInv>::SharedPtr
+      torque_allocation_matrix_inv_pub_;  // for spinal
   double torque_allocation_matrix_inv_pub_stamp_;
   rclcpp::Publisher<aerial_robot_msgs::msg::WrenchAllocationMatrix>::SharedPtr wrench_allocation_matrix_pub_;  // for
                                                                                                                // debug

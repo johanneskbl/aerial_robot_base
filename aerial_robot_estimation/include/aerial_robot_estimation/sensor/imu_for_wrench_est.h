@@ -172,7 +172,7 @@ public:
   }
 
 protected:
-  void imuCallback(const spinal::msg::Imu::SharedPtr msg) override;
+  void imuCallback(const spinal_msgs::msg::Imu::SharedPtr msg) override;
 
   // Semaphores
   std::mutex omega_mutex_;

@@ -45,7 +45,7 @@
 
 #include "aerial_robot_model/model/aerial_robot_model.h"
 #include "aerial_robot_model/srv/add_extra_module.hpp"
-#include "spinal/msg/desire_coord.hpp"
+#include "spinal_msgs/msg/desire_coord.hpp"
 
 namespace aerial_robot_model
 {
@@ -72,11 +72,11 @@ private:
   void addExtraModuleCallback(const std::shared_ptr<rmw_request_id_t> request_header,
                               const std::shared_ptr<aerial_robot_model::srv::AddExtraModule::Request> req,
                               std::shared_ptr<aerial_robot_model::srv::AddExtraModule::Response> res);
-  void desireCoordinateCallback(const spinal::msg::DesireCoord::ConstSharedPtr &msg);
+  void desireCoordinateCallback(const spinal_msgs::msg::DesireCoord::ConstSharedPtr &msg);
 
   // ROS2 interfaces
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
-  rclcpp::Subscription<spinal::msg::DesireCoord>::SharedPtr desire_coordinate_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::DesireCoord>::SharedPtr desire_coordinate_sub_;
   rclcpp::Service<aerial_robot_model::srv::AddExtraModule>::SharedPtr add_extra_module_srv_;
 
   // TF broadcasters

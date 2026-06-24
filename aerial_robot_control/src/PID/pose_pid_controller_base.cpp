@@ -329,8 +329,8 @@ void PosePIDControllerBase::controlCore()
     {
       start_roll_pitch_integration_ = true;
 
-      spinal::msg::FlightConfigCmd flight_config_cmd;
-      flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::INTEGRATION_CONTROL_ON_CMD;
+      spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+      flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::INTEGRATION_CONTROL_ON_CMD;
       navigator_->getFlightConfigPublisher()->publish(flight_config_cmd);
 
       RCLCPP_WARN(node_->get_logger(), "[PID] Starting roll & pitch I-term control");

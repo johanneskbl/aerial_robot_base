@@ -65,7 +65,7 @@ bool Imu4WrenchEst::reset()
 }
 
 // override to get filtered gyro data
-void Imu4WrenchEst::imuCallback(const spinal::msg::Imu::SharedPtr msg)
+void Imu4WrenchEst::imuCallback(const spinal_msgs::msg::Imu::SharedPtr msg)
 {
   // Check the validity first
   for (int i = 0; i < 3; i++)

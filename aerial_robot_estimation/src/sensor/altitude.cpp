@@ -115,7 +115,7 @@ void AltitudeSensor::initialize(rclcpp::Node::SharedPtr node,
 
 
   /* Barometer */
-  // barometer_sub_ = node_->create_subscription<spinal::msg::Barometer>(
+  // barometer_sub_ = node_->create_subscription<spinal_msgs::msg::Barometer>(
   //     barometer_sub_name_, rclcpp::SystemDefaultsQoS(), std::bind(&AltitudeSensor::baroCallback, this,
   //                                                                 std::placeholders::_1));
 }
@@ -518,7 +518,7 @@ bool AltitudeSensor::terrainProcess(double current_secs)
   return false;
 }
 
-void AltitudeSensor::baroCallback(const spinal::msg::Barometer::SharedPtr baro_msg)
+void AltitudeSensor::baroCallback(const spinal_msgs::msg::Barometer::SharedPtr baro_msg)
 {
   static double baro_previous_secs;
   double current_secs = rclcpp::Time(baro_msg->stamp).seconds();

@@ -98,7 +98,7 @@ RobotModelRos::RobotModelRos(rclcpp::Node::SharedPtr node)
   }
 
   // 5) Subscribe to topic for setting the desired coordinate and set callback to update it in the model
-  desire_coordinate_sub_ = node_->create_subscription<spinal::msg::DesireCoord>(
+  desire_coordinate_sub_ = node_->create_subscription<spinal_msgs::msg::DesireCoord>(
       "desire_coordinate", rclcpp::SystemDefaultsQoS(),
       std::bind(&RobotModelRos::desireCoordinateCallback, this, std::placeholders::_1));
 
@@ -163,7 +163,7 @@ void RobotModelRos::addExtraModuleCallback(const std::shared_ptr<rmw_request_id_
   // No return value; 'status' field carries the result
 }
 
-void RobotModelRos::desireCoordinateCallback(const spinal::msg::DesireCoord::ConstSharedPtr &msg)
+void RobotModelRos::desireCoordinateCallback(const spinal_msgs::msg::DesireCoord::ConstSharedPtr &msg)
 {
   robot_model_->setCogDesireOrientation(msg->roll, msg->pitch, msg->yaw);
 }

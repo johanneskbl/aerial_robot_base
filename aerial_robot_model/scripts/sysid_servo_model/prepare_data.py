@@ -33,8 +33,8 @@ class DataStore:
 
 MESSAGE_TYPE_MAP = {
     "sensor_msgs/msg/JointState": JointState,
-    "spinal/msg/ServoStates": ServoStates,
-    "spinal/msg/ServoControlCmd": ServoControlCmd,
+    "spinal_msgs/msg/ServoStates": ServoStates,
+    "spinal_msgs/msg/ServoControlCmd": ServoControlCmd,
 }
 
 

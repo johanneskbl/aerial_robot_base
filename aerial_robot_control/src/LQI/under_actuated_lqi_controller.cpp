@@ -53,10 +53,10 @@ void UnderActuatedLQIController::initialize(rclcpp::Node::SharedPtr node,
 
   rosParamInit();
 
-  rpy_gain_pub_ = node_->create_publisher<spinal::msg::RollPitchYawTerms>("rpy/gain", 1);
-  flight_cmd_pub_ = node_->create_publisher<spinal::msg::FourAxisCommand>("four_axes/command", 1);
+  rpy_gain_pub_ = node_->create_publisher<spinal_msgs::msg::RollPitchYawTerms>("rpy/gain", 1);
+  flight_cmd_pub_ = node_->create_publisher<spinal_msgs::msg::FourAxisCommand>("four_axes/command", 1);
   four_axis_gain_pub_ = node_->create_publisher<aerial_robot_msgs::msg::FourAxisGain>("debug/four_axes/gain", 1);
-  p_matrix_pseudo_inverse_inertia_pub_ = node_->create_publisher<spinal::msg::PMatrixPseudoInverseWithInertia>(
+  p_matrix_pseudo_inverse_inertia_pub_ = node_->create_publisher<spinal_msgs::msg::PMatrixPseudoInverseWithInertia>(
       "p_matrix_pseudo_inverse_inertia", 1);
 
   // Parameter-change callback
@@ -423,7 +423,7 @@ void UnderActuatedLQIController::allocateYawTerm()
 void UnderActuatedLQIController::sendGain()
 {
   aerial_robot_msgs::msg::FourAxisGain four_axis_gain_msg;
-  spinal::msg::RollPitchYawTerms rpy_gain_msg;  // Send to spinal
+  spinal_msgs::msg::RollPitchYawTerms rpy_gain_msg;  // Send to spinal
   rpy_gain_msg.motors.resize(motor_num_);
 
   for (int i = 0; i < motor_num_; ++i)
@@ -469,7 +469,7 @@ void UnderActuatedLQIController::sendCmd()
 
 void UnderActuatedLQIController::sendFourAxisCommand()
 {
-  spinal::msg::FourAxisCommand flight_command_data;
+  spinal_msgs::msg::FourAxisCommand flight_command_data;
   flight_command_data.angles[0] = target_roll_;
   flight_command_data.angles[1] = target_pitch_;
   flight_command_data.angles[2] = candidate_yaw_term_;
@@ -484,7 +484,7 @@ void UnderActuatedLQIController::sendRotationalInertiaComp()
   Eigen::MatrixXd P = robot_model_->calcWrenchMatrixOnCoG();
   Eigen::MatrixXd p_mat_pseudo_inv_ = aerial_robot_model::pseudoinverse(P.middleRows(2, lqi_mode_));
 
-  spinal::msg::PMatrixPseudoInverseWithInertia p_pseudo_inverse_with_inertia_msg;  // To spinal
+  spinal_msgs::msg::PMatrixPseudoInverseWithInertia p_pseudo_inverse_with_inertia_msg;  // To spinal
   p_pseudo_inverse_with_inertia_msg.pseudo_inverse.resize(motor_num_);
 
   for (int i = 0; i < motor_num_; ++i)

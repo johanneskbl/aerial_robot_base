@@ -53,7 +53,7 @@
 #include "aerial_robot_navigation/trajectory/trajectory_reference/polynomial_trajectory.hpp"
 #include "aerial_robot_navigation/util/joy_parser.hpp"
 #include "aerial_robot_msgs/msg/flight_nav.hpp"
-#include "spinal/msg/flight_config_cmd.hpp"
+#include "spinal_msgs/msg/flight_config_cmd.hpp"
 
 
 namespace aerial_robot_navigation
@@ -116,7 +116,10 @@ public:
 
   virtual void update();
 
-  rclcpp::Publisher<spinal::msg::FlightConfigCmd>::SharedPtr getFlightConfigPublisher() { return flight_config_pub_; }
+  rclcpp::Publisher<spinal_msgs::msg::FlightConfigCmd>::SharedPtr getFlightConfigPublisher()
+  {
+    return flight_config_pub_;
+  }
 
   inline void setNaviState(const uint8_t state) { navi_state_ = state; }
   inline uint8_t getNaviState() { return navi_state_; }
@@ -193,7 +196,7 @@ public:
 protected:
   rclcpp::Node::SharedPtr node_;
 
-  rclcpp::Publisher<spinal::msg::FlightConfigCmd>::SharedPtr flight_config_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::FlightConfigCmd>::SharedPtr flight_config_pub_;
   rclcpp::Publisher<std_msgs::msg::UInt8>::SharedPtr flight_state_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr waypoint_pub_;

@@ -59,9 +59,9 @@ void FullyActuatedPIDController::initialize(rclcpp::Node::SharedPtr node,
   pid_msg_.y.total.resize(motor_num_);
   pid_msg_.z.total.resize(motor_num_);
 
-  rpy_gain_pub_ = node->create_publisher<spinal::msg::RollPitchYawTerms>("rpy/gain", 1);
-  flight_cmd_pub_ = node->create_publisher<spinal::msg::FourAxisCommand>("four_axes/command", 1);
-  torque_allocation_matrix_inv_pub_ = node->create_publisher<spinal::msg::TorqueAllocationMatrixInv>(
+  rpy_gain_pub_ = node->create_publisher<spinal_msgs::msg::RollPitchYawTerms>("rpy/gain", 1);
+  flight_cmd_pub_ = node->create_publisher<spinal_msgs::msg::FourAxisCommand>("four_axes/command", 1);
+  torque_allocation_matrix_inv_pub_ = node->create_publisher<spinal_msgs::msg::TorqueAllocationMatrixInv>(
       "torque_allocation_matrix_inv", 1);
   wrench_allocation_matrix_pub_ = node->create_publisher<aerial_robot_msgs::msg::WrenchAllocationMatrix>(
       "debug/wrench_allocation_matrix", 1);
@@ -164,7 +164,7 @@ void FullyActuatedPIDController::sendCmd()
 
 void FullyActuatedPIDController::sendFourAxisCommand()
 {
-  spinal::msg::FourAxisCommand flight_command_data;
+  spinal_msgs::msg::FourAxisCommand flight_command_data;
   flight_command_data.angles[2] = candidate_yaw_term_;
   flight_command_data.base_thrust = target_base_thrust_;
   flight_cmd_pub_->publish(flight_command_data);
@@ -176,7 +176,7 @@ void FullyActuatedPIDController::sendTorqueAllocationMatrixInv()
   {
     torque_allocation_matrix_inv_pub_stamp_ = node_->now().seconds();
 
-    spinal::msg::TorqueAllocationMatrixInv torque_allocation_matrix_inv_msg;
+    spinal_msgs::msg::TorqueAllocationMatrixInv torque_allocation_matrix_inv_msg;
     torque_allocation_matrix_inv_msg.rows.resize(motor_num_);
     Eigen::MatrixXd torque_allocation_matrix_inv = q_mat_inv_.rightCols(3);
     if (torque_allocation_matrix_inv.cwiseAbs().maxCoeff() > INT16_MAX * 0.001f)
@@ -231,7 +231,7 @@ void FullyActuatedPIDController::reset()
 
 void FullyActuatedPIDController::setAttitudeGains()
 {
-  spinal::msg::RollPitchYawTerms rpy_gain_msg;  // for rosserial
+  spinal_msgs::msg::RollPitchYawTerms rpy_gain_msg;  // for rosserial
   /* Send to flight controller via rosserial scaling by 1000 */
   rpy_gain_msg.motors.resize(1);
   rpy_gain_msg.motors.at(0).roll_p = pid_controllers_.at(ROLL).getPGain() * 1000;

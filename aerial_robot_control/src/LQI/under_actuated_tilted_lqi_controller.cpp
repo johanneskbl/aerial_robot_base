@@ -46,7 +46,7 @@ void UnderActuatedTiltedLQIController::initialize(rclcpp::Node::SharedPtr node,
 {
   UnderActuatedLQIController::initialize(node, robot_model, estimator, navigator, ctrl_loop_dt);
 
-  desired_baselink_rot_pub_ = node_->create_publisher<spinal::msg::DesireCoord>("desire_coordinate", 1);
+  desired_baselink_rot_pub_ = node_->create_publisher<spinal_msgs::msg::DesireCoord>("desire_coordinate", 1);
 
   pid_msg_.z.p_term.resize(1);
   pid_msg_.z.i_term.resize(1);
@@ -169,7 +169,7 @@ void UnderActuatedTiltedLQIController::sendGain()
   double roll, pitch, yaw;
   robot_model_->getCogDesireOrientation<KDL::Rotation>().GetRPY(roll, pitch, yaw);
 
-  spinal::msg::DesireCoord coord_msg;
+  spinal_msgs::msg::DesireCoord coord_msg;
   coord_msg.roll = roll;
   coord_msg.pitch = pitch;
   // TODO: Why not also publish the desired yaw?

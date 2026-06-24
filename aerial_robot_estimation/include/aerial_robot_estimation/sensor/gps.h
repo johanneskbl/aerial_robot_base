@@ -50,8 +50,8 @@
 /* Aerial robot packages */
 #include "aerial_robot_estimation/sensor/base_plugin.h"
 #include "aerial_robot_estimation/sensor/odom.h"
-#include "spinal/msg/gps.hpp"
-#include "spinal/msg/gps_full.hpp"
+#include "spinal_msgs/msg/gps.hpp"
+#include "spinal_msgs/msg/gps_full.hpp"
 
 /* TODO:
    1. gps redundant proccess to improce the accuracy of position estimation
@@ -84,8 +84,8 @@ public:
 private:
   /* ROS */
   rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr gps_pub_;
-  rclcpp::Subscription<spinal::msg::Gps>::SharedPtr gps_sub_;
-  rclcpp::Subscription<spinal::msg::GpsFull>::SharedPtr gps_full_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::Gps>::SharedPtr gps_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::GpsFull>::SharedPtr gps_full_sub_;
   rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_ros_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rtk_gps_sub_;
 
@@ -107,8 +107,8 @@ private:
   KDL::Vector raw_vel_;
   KDL::Vector pos_offset_;
 
-  void gpsCallback(const spinal::msg::Gps::SharedPtr gps_msg);
-  void gpsFullCallback(const spinal::msg::GpsFull::SharedPtr gps_full_msg);
+  void gpsCallback(const spinal_msgs::msg::Gps::SharedPtr gps_msg);
+  void gpsFullCallback(const spinal_msgs::msg::GpsFull::SharedPtr gps_full_msg);
   void gpsRosCallback(const sensor_msgs::msg::NavSatFix::SharedPtr gps_msg);
   void rtkGpsCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr gps_msg);
   void estimateProcess();

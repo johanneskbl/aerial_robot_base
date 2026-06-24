@@ -44,7 +44,7 @@
 #include "aerial_robot_control/base/control_base.hpp"
 #include "aerial_robot_control/PID/pid.hpp"
 #include "aerial_robot_msgs/msg/pose_control_pid.hpp"
-#include "spinal/msg/flight_config_cmd.hpp"
+#include "spinal_msgs/msg/flight_config_cmd.hpp"
 
 
 namespace aerial_robot_control

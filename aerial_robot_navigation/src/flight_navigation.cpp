@@ -125,8 +125,8 @@ void NavigationBase::initialize(rclcpp::Node::SharedPtr node,
   force_landing_start_time_ = node_->get_clock()->now().seconds();
 
   // Publishers
-  flight_config_pub_ = node_->create_publisher<spinal::msg::FlightConfigCmd>("flight_config_cmd",
-                                                                             rclcpp::SystemDefaultsQoS());
+  flight_config_pub_ = node_->create_publisher<spinal_msgs::msg::FlightConfigCmd>("flight_config_cmd",
+                                                                                  rclcpp::SystemDefaultsQoS());
   flight_state_pub_ = node_->create_publisher<std_msgs::msg::UInt8>("flight_state", rclcpp::SystemDefaultsQoS());
   path_pub_ = node_->create_publisher<nav_msgs::msg::Path>("trajectory", rclcpp::SystemDefaultsQoS());
   waypoint_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("waypoints",
@@ -179,8 +179,8 @@ void NavigationBase::update()
     {
       RCLCPP_WARN(NAV_LOGGER, "Sensor Unhealth Level%d: force landing state", estimator_->getUnhealthLevel());
 
-      spinal::msg::FlightConfigCmd flight_config_cmd;
-      flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::FORCE_LANDING_CMD;
+      spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+      flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::FORCE_LANDING_CMD;
       flight_config_pub_->publish(flight_config_cmd);
       force_landing_flag_ = true;
     }
@@ -254,8 +254,8 @@ void NavigationBase::update()
       estimator_->setSensorFusionFlag(true);
       force_landing_flag_ = false;
 
-      spinal::msg::FlightConfigCmd flight_config_cmd;
-      flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::ARM_ON_CMD;
+      spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+      flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::ARM_ON_CMD;
       flight_config_pub_->publish(flight_config_cmd);
 
       break;
@@ -363,8 +363,8 @@ void NavigationBase::update()
     case STOP_STATE: {
       reset();
 
-      spinal::msg::FlightConfigCmd flight_config_cmd;
-      flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::ARM_OFF_CMD;
+      spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+      flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::ARM_OFF_CMD;
       flight_config_pub_->publish(flight_config_cmd);
 
       if (force_landing_flag_)
@@ -643,8 +643,8 @@ void NavigationBase::joyStickControl(const sensor_msgs::msg::Joy::ConstSharedPtr
     if (!force_landing_flag_ && isInflightState())
     {
       RCLCPP_WARN(NAV_LOGGER, "Joy Control: Force Landing State!");
-      spinal::msg::FlightConfigCmd flight_config_cmd;
-      flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::FORCE_LANDING_CMD;
+      spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+      flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::FORCE_LANDING_CMD;
       flight_config_pub_->publish(flight_config_cmd);
       force_landing_flag_ = true;
 
@@ -849,21 +849,21 @@ void NavigationBase::joyStickControl(const sensor_msgs::msg::Joy::ConstSharedPtr
 
 void NavigationBase::flightStatusAckCallback(std_msgs::msg::UInt8::ConstSharedPtr msg)
 {
-  if (msg->data == spinal::msg::FlightConfigCmd::ARM_OFF_CMD)
+  if (msg->data == spinal_msgs::msg::FlightConfigCmd::ARM_OFF_CMD)
   {
     // Arming off
     RCLCPP_INFO(NAV_LOGGER, "STOP RES From AERIAL ROBOT");
     setNaviState(ARM_OFF_STATE);
   }
 
-  if (msg->data == spinal::msg::FlightConfigCmd::ARM_ON_CMD)
+  if (msg->data == spinal_msgs::msg::FlightConfigCmd::ARM_ON_CMD)
   {
     // Arming on
     RCLCPP_INFO(NAV_LOGGER, "START RES From AERIAL ROBOT");
     setNaviState(ARM_ON_STATE);
   }
 
-  if (msg->data == spinal::msg::FlightConfigCmd::FORCE_LANDING_CMD)
+  if (msg->data == spinal_msgs::msg::FlightConfigCmd::FORCE_LANDING_CMD)
   {
     // Get the first force landing message from spinal
     RCLCPP_INFO(NAV_LOGGER, "FORCE LANDING MSG From AERIAL ROBOT");
@@ -973,8 +973,8 @@ void NavigationBase::haltCallback(const std_msgs::msg::Empty::ConstSharedPtr msg
 
 void NavigationBase::forceLandingCallback(std_msgs::msg::Empty::ConstSharedPtr msg)
 {
-  spinal::msg::FlightConfigCmd flight_config_cmd;
-  flight_config_cmd.cmd = spinal::msg::FlightConfigCmd::FORCE_LANDING_CMD;
+  spinal_msgs::msg::FlightConfigCmd flight_config_cmd;
+  flight_config_cmd.cmd = spinal_msgs::msg::FlightConfigCmd::FORCE_LANDING_CMD;
   flight_config_pub_->publish(flight_config_cmd);
   force_landing_flag_ = true;
 
