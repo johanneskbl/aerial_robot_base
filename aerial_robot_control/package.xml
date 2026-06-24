@@ -15,7 +15,6 @@
   <depend>pluginlib</depend>
   <depend>angles</depend>
   <depend>tf2</depend>
-  <depend>orocos_kdl</depend>
 
   <!-- Aerial robot dependencies -->
   <depend>aerial_robot_model</depend>

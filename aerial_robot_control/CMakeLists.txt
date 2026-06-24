@@ -18,7 +18,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(angles REQUIRED)
-find_package(orocos_kdl REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(aerial_robot_estimation REQUIRED)
 find_package(aerial_robot_navigation REQUIRED)
@@ -30,7 +29,6 @@ set(ROS_DEPENDENCIES
   rclcpp
   pluginlib
   angles
-  orocos_kdl
   tf2
   aerial_robot_estimation
   aerial_robot_navigation
