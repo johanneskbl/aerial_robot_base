@@ -22,19 +22,21 @@ jobs:
         id: range
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "FROM=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
-            echo "TO=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+            FROM="${{ github.event.pull_request.base.sha }}"
+            TO="${{ github.event.pull_request.head.sha }}"
           else
-            echo "FROM=${{ github.event.before }}" >> $GITHUB_ENV
-            echo "TO=${{ github.sha }}" >> $GITHUB_ENV
+            FROM="${{ github.event.before }}"
+            TO="${{ github.sha }}"
           fi
 
-          # On a new branch / first push, ignore
+          # On a new branch / first push, skip pre-commit
           ZERO=0000000000000000000000000000000000000000
           if [[ "$FROM" == "$ZERO" ]]; then
-            echo "RUN=false" >> $GITHUB_ENV
+            echo "RUN=false" >> "$GITHUB_ENV"
           else
-            echo "RUN=true" >> $GITHUB_ENV
+            echo "RUN=true" >> "$GITHUB_ENV"
+            echo "FROM=$FROM" >> "$GITHUB_ENV"
+            echo "TO=$TO" >> "$GITHUB_ENV"
           fi
 
       # 4) Run pre-commit; the job fails if any file would be reformatted
