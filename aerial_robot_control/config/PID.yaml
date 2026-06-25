@@ -1,0 +1,59 @@
+/**/aerial_robot_core:
+  ros__parameters:
+    controller:
+      hovering_approximate: false
+      torque_allocation_matrix_inv_pub_interval: 0.05
+      wrench_allocation_matrix_pub_interval: 0.1
+
+      xy:
+        p_gain: 0.01
+        i_gain: 0.01
+        d_gain: 0.15
+        limit_sum: 1000000.0
+        limit_p: 1000000.0
+        limit_i: 1000000.0
+        limit_d: 1000000.0
+        limit_err_p: 1000000.0
+        limit_err_i: 1000000.0
+        limit_err_d: 1000000.0
+
+      z:
+        p_gain: 0.01
+        i_gain: 0.01
+        d_gain: 0.15
+        limit_sum: 1000000.0
+        limit_p: 1000000.0
+        limit_i: 1000000.0
+        limit_d: 1000000.0
+        limit_err_p: 1000000.0
+        limit_err_i: 1000000.0
+        limit_err_d: 1000000.0
+        landing_err_z: -0.5
+        safe_landing_height: 0.1
+        force_landing_descending_rate: -0.1
+
+      roll_pitch:
+        p_gain: 0.01
+        i_gain: 0.01
+        d_gain: 0.15
+        limit_sum: 1000000.0
+        limit_p: 1000000.0
+        limit_i: 1000000.0
+        limit_d: 1000000.0
+        limit_err_p: 1000000.0
+        limit_err_i: 1000000.0
+        limit_err_d: 1000000.0
+        start_integration_height: 0.01
+
+      yaw:
+        p_gain: 0.01
+        i_gain: 0.01
+        d_gain: 0.15
+        limit_sum: 1000000.0
+        limit_p: 1000000.0
+        limit_i: 1000000.0
+        limit_d: 1000000.0
+        limit_err_p: 1000000.0
+        limit_err_i: 1000000.0
+        limit_err_d: 1000000.0
+        need_d_control: false

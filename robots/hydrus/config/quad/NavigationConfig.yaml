@@ -1,0 +1,39 @@
+/**/aerial_robot_core:
+  ros__parameters:
+    navigation:
+      param_verbose: false
+
+      # Teleop Basic Param
+      xy_control_mode: 0
+      # World Pos Control Mode: 0
+      # World Vel Control Mode: 2
+      # Local Vel Control Mode: 3
+      # Attitude Control Mode: 4
+
+
+      takeoff_height: 0.6
+      outdoor_takeoff_height: 1.5
+
+      # Teleop settings
+      max_target_vel: 0.5
+      joy_target_vel_interval: 0.005  # 0.2 / 20 = 0.01, 0.005 ~ 0.01  m/s
+      joy_target_z_interval: 0.02
+      max_target_yaw_rate: 0.1  # 0.05
+      teleop_local_frame: fc
+
+      cmd_vel_lev2_gain : 2.0
+      nav_vel_limit : 1.0
+
+      gain_tunning_mode: 0
+      max_target_tilt_angle: 0.2
+      cmd_angle_lev2_gain : 1.5
+
+      # GPS waypoint
+      gps_waypoint_threshold: 3.0
+      gps_waypoint_check_duration: 1.0
+
+      # Trajectory
+      trajectory_min_duration: 4.0
+      trajectory_mean_yaw_rate: 0.3
+      enable_latch_yaw_trajectory: false
+

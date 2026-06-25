@@ -3,32 +3,35 @@
 <package format="3">
   <name>aerial_robot_core</name>
   <version>0.0.0</version>
-  <description>ROS2 port of aerial_robot_core package</description>
-  <maintainer email="root@todo.todo">root</maintainer>
+  <description>ROS 2 package for aerial_robot_core</description>
+  <maintainer email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</maintainer>
+  <license>BSD-3</license>
   <author email="j-sugihara@dragon.t.u-tokyo.ac.jp">Junichiro Sugihara</author>
-  <license>BSD</license>
 
+  <!-- ROS 2 dependencies -->
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
-  <depend>aerial_robot_model</depend>
-  <depend>aerial_robot_estimation</depend>
-  <!-- <depend>aerial_robot_control</depend> -->
-  <exec_depend>ros2launch</exec_depend>
-  <exec_depend>ament_cmake_python</exec_depend>
-
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
-
+  <depend>pluginlib</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
-
-  <depend>joy</depend>
   <!-- <depend>mocap_optitrack</depend> -->
-  <depend>smach_ros</depend>
-  <!-- <depend>smach_viewer</depend> -->
-  <!-- <depend>ros_numpy</depend> -->
+  <depend>joy</depend>
+  <exec_depend>ros2launch</exec_depend>
   <exec_depend>ros2_numpy</exec_depend>
   <exec_depend>smach</exec_depend>
+
+  <!-- Aerial robot dependencies -->
+  <depend>aerial_robot_model</depend>
+  <depend>aerial_robot_estimation</depend>
+  <depend>aerial_robot_navigation</depend>
+  <depend>aerial_robot_control</depend>
+
+  <!-- Linters -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

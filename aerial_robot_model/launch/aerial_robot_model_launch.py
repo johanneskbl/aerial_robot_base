@@ -1,157 +1,166 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 import os
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo
-from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import (
     LaunchConfiguration,
-    Command,
     PathJoinSubstitution,
-    TextSubstitution,
-    FindExecutable,
-    PythonExpression
+    PythonExpression,
+    Command,
+    EnvironmentVariable,
 )
+from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.parameter_descriptions import ParameterValue, ParameterFile
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.parameter_descriptions import ParameterValue
 
-from launch.actions import IncludeLaunchDescription
-from launch.substitutions import PathJoinSubstitution
+# ---------------------------------------------------------------------------
+# Argument declarations  (name, default, description, (optional) choices)
+# ---------------------------------------------------------------------------
+_ARGS = [
+    ("robot_model", "hydrus", "Name of the robot model ROS package"),
+    ("robot_ns", "hydrus", "Namespace for all robot nodes"),
+    ("real_machine", "true", "Use real machine specific bring-up inside model_launch", ["true", "false"]),
+    ("headless", "true", "Run without GUI", ["true", "false"]),
+    ("sim", "false", "Launch Gazebo simulation", ["true", "false"]),
+    ("rviz_config_path", "rviz_config.rviz", "RViz config filename (resolved inside robot_model pkg/config/)"),
+    ("rviz_init_path", "RvizInit.yaml", "Parameter file with initial joint values for joint_state_publisher_gui"),
+]
+
+
+def gui_check(context, *args, **kwargs):
+    headless = LaunchConfiguration("headless").perform(context)
+    display = EnvironmentVariable("DISPLAY", default_value="").perform(context)
+    wayland_display = EnvironmentVariable("WAYLAND_DISPLAY", default_value="").perform(context)
+    xauthority = EnvironmentVariable("XAUTHORITY", default_value="").perform(context)
+    gui_available = PythonExpression(
+        [
+            "'true' if (len('",
+            wayland_display,
+            "') > 0) or ((len('",
+            display,
+            "') > 0) and (len('",
+            xauthority,
+            "') > 0)) else 'false'",
+        ]
+    ).perform(context)
+
+    if headless.lower() == "false" and gui_available.lower() == "false":
+        raise RuntimeError("[ERROR] [launch]: Headless mode is deactivated but no GUI environment detected. \
+                           Set headless to true or ensure DISPLAY and XAUTHORITY (X11) or \
+                           WAYLAND_DISPLAY (Wayland) are set in the environment.")
+    if headless.lower() == "false" and gui_available.lower() == "true":
+        if len(wayland_display) > 0:
+            print("[INFO] [launch]: GUI environment detected: Wayland (WAYLAND_DISPLAY is set)")
+        elif len(display) > 0 and len(xauthority) > 0:
+            print("[INFO] [launch]: GUI environment detected: X11 (DISPLAY and XAUTHORITY are set)")
+
 
 def generate_launch_description():
-
-    # --- LaunchConfiguration ---
-    headless         = LaunchConfiguration('headless')
-    rm               = LaunchConfiguration('rm')
-    sim              = LaunchConfiguration('sim')
-    model_options    = LaunchConfiguration('model_options')
-    robot_model_pkg  = LaunchConfiguration('robot_model')
-    robot_ns         = LaunchConfiguration('robot_ns')
-    robot_model_rviz = LaunchConfiguration('robot_model_rviz')
-    robot_description_content = LaunchConfiguration('robot_description_content')
-
-    # --- DeclareLaunchArgument ---
-    headless_arg = DeclareLaunchArgument(
-        'headless',
-        default_value='false',
-        description='Run without GUI (headless mode)'
-    )
-
-    simulation_arg = DeclareLaunchArgument(
-        'sim',
-        default_value='false',
-        description='Run in simulation mode (e.g., use Gazebo clock)'
-    )
-
-    realmachine_arg = DeclareLaunchArgument(
-        'rm',
-        default_value='false',
-        description='Run in realmachine mode'
-    )
-
-    model_options_arg = DeclareLaunchArgument(
-        'model_options',
-        default_value='',
-        description='Additional model options (e.g., extra URDF args)'
-    )
-
-    robot_model_pkg_arg = DeclareLaunchArgument(
-        'robot_model',
-        description='Name of the robot model package'
-    )
-
-    robot_ns_arg = DeclareLaunchArgument(
-        'robot_ns',
-        description='ROS namespace under which to launch the robot'
-    )
-
-    robot_model_rviz_arg = DeclareLaunchArgument(
-        'robot_model_rviz',
-        default_value='rviz_config.rviz',
-        description='RViz display configuration for the robot model'
-    )
-
-    robot_description_arg = DeclareLaunchArgument(
-        'robot_description_content',
-        description='Full robot_description (xacro output) from parent'
-    )
-
-    # --- robot description parameter ---w
-    robot_description = {
-            'robot_description':
-        ParameterValue(
-            robot_description_content,
-            value_type=str
+    # ------------------------------------------------------------------
+    # 1.  Declare CLI-overridable arguments
+    # ------------------------------------------------------------------
+    declared_args = [
+        DeclareLaunchArgument(
+            name, default_value=default_value, description=description, **({"choices": choices[0]} if choices else {})
         )
-    }
+        for name, default_value, description, *choices in _ARGS
+    ]
 
-    # --- rviz config path ---w
-    rviz_config = PathJoinSubstitution([
-        FindPackageShare(robot_model_pkg),
-        'config',
-        robot_model_rviz
-    ])
+    # Resolve / Read at launch time (NOT AT IMPORT TIME)
+    robot_model_pkg = LaunchConfiguration("robot_model")
+    robot_ns = LaunchConfiguration("robot_ns")
+    real_machine = LaunchConfiguration("real_machine")
+    headless = LaunchConfiguration("headless")
+    sim = LaunchConfiguration("sim")
+    rviz_config_path = LaunchConfiguration("rviz_config_path")
+    rviz_init_path = LaunchConfiguration("rviz_init_path")
+    robot_description = LaunchConfiguration("robot_description")
 
-    # --- joint state condition parameter---
-    need_js = PythonExpression([
-        "'false' if '", sim, "' == 'true' or '", rm, "' == 'true' else 'true'"
-    ])
+    # Guard against RViz/Qt crashes in headless environments (containers, SSH without X11/Wayland).
+    # We consider a GUI available if:
+    # - Wayland: WAYLAND_DISPLAY is set, OR
+    # - X11: DISPLAY and XAUTHORITY are both set.
+    display = EnvironmentVariable("DISPLAY", default_value="")
+    wayland_display = EnvironmentVariable("WAYLAND_DISPLAY", default_value="")
+    xauthority = EnvironmentVariable("XAUTHORITY", default_value="")
+    gui_available = PythonExpression(
+        [
+            "'true' if (len('",
+            wayland_display,
+            "') > 0) or ((len('",
+            display,
+            "') > 0) and (len('",
+            xauthority,
+            "') > 0)) else 'false'",
+        ]
+    )
+    launch_gui = PythonExpression(["('", headless, "' == 'false') and ('", gui_available, "' == 'true')"])
 
-    # --- nodes ---
+    robot_description_param = {"robot_description": ParameterValue(Command(robot_description), value_type=str)}
+
+    # TODO WHAT IS THIS!? how can we have both sim and real_machine false at the same time? What does this represent? Necessary?
+    need_joint_states = PythonExpression(
+        ["'false' if '", sim, "' == 'true' or '", real_machine, "' == 'true' else 'true'"]
+    )
+
+    # ------------------------------------------------------------------
+    # 2.  Nodes
+    # ------------------------------------------------------------------
     robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        name="robot_state_publisher",
         namespace=robot_ns,
         parameters=[
-            robot_description,
-            {'use_sim_time': sim, 'tf_prefix': robot_ns}
-        ]
+            {"tf_prefix": robot_ns, "use_sim_time": sim},
+            robot_description_param,
+        ],
     )
 
     rotor_tf_publisher_node = Node(
-        package='aerial_robot_model',
-        executable='rotor_tf_publisher',
-        name='rotor_tf_publisher',
+        package="aerial_robot_model",
+        executable="rotor_tf_publisher",
+        name="rotor_tf_publisher",
         namespace=robot_ns,
-        condition=UnlessCondition(need_js),
-        parameters=[
-            {'use_sim_time': sim, 'tf_prefix': robot_ns},
-            robot_description],
+        condition=UnlessCondition(need_joint_states),
+        parameters=[{"tf_prefix": robot_ns, "use_sim_time": sim}, robot_description_param],
     )
 
     joint_state_pub_node = Node(
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher_gui',
+        package="joint_state_publisher_gui",
+        executable="joint_state_publisher_gui",
+        name="joint_state_publisher_gui",
         namespace=robot_ns,
-        condition=IfCondition(need_js),
-        parameters=[{'use_sim_time': sim}, robot_description],
+        condition=IfCondition(need_joint_states),
+        parameters=[{"use_sim_time": sim}, rviz_init_path, robot_description_param],
     )
 
     rviz2_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
         namespace=robot_ns,
-        arguments=['-d', rviz_config],
-        condition=UnlessCondition(headless),
-        parameters=[{'use_sim_time': sim}],
+        arguments=["-d", rviz_config_path],
+        condition=IfCondition(launch_gui),
+        parameters=[{"use_sim_time": sim}],
+        output="screen",
     )
 
+    # ------------------------------------------------------------------
+    # 3.  Assemble LaunchDescription
+    # ------------------------------------------------------------------
     ld = LaunchDescription()
-    ld.add_action(headless_arg)
-    ld.add_action(simulation_arg)
-    ld.add_action(realmachine_arg)
-    ld.add_action(model_options_arg)
-    ld.add_action(robot_model_pkg_arg)
-    ld.add_action(robot_ns_arg)
-    ld.add_action(robot_model_rviz_arg)
-    ld.add_action(robot_description_arg)
+
+    for arg in declared_args:
+        ld.add_action(arg)
+
+    ld.add_action(OpaqueFunction(function=gui_check))
     ld.add_action(robot_state_publisher_node)
     ld.add_action(rotor_tf_publisher_node)
     ld.add_action(joint_state_pub_node)
     ld.add_action(rviz2_node)
+
     return ld

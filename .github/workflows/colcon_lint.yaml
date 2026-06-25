@@ -1,0 +1,81 @@
+name: ROS2 Build and Lint Checks
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint:
+    name: Ament Build & Linters
+    runs-on: ubuntu-latest
+    env:
+      ROS_DISTRO: humble  # Can be changed/updated
+      DEBIAN_FRONTEND: noninteractive
+    container: ros:${ROS_DISTRO}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: src/${{ github.event.repository.name }}
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            python3-vcstool \
+            python3-colcon-common-extensions \
+            ros-${ROS_DISTRO}-ament-cmake \
+            ros-${ROS_DISTRO}-ament-lint-auto \
+            ros-${ROS_DISTRO}-ament-cmake-cppcheck \
+            ros-${ROS_DISTRO}-ament-cmake-lint-cmake \
+            ros-${ROS_DISTRO}-ament-cmake-pep257 \
+            ros-${ROS_DISTRO}-ament-cmake-xmllint
+        
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
+            rosdep init
+          fi
+          rosdep update
+          vcs import src < src/${{ github.event.repository.name }}/aerial_robot_${ROS_DISTRO}.repos
+          rosdep install -y -r \
+            --from-paths src \
+            --ignore-src \
+            --rosdistro ${ROS_DISTRO}
+
+      - name: Export ROS environment
+        run: |
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          {
+            echo "AMENT_PREFIX_PATH=$AMENT_PREFIX_PATH"
+            echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
+            echo "COLCON_PREFIX_PATH=$COLCON_PREFIX_PATH"
+            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+            echo "PATH=$PATH"
+            echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+            echo "PYTHONPATH=$PYTHONPATH"
+            echo "ROS_VERSION=$ROS_VERSION"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and run lint tests
+        run: |
+          colcon build \
+            --event-handlers console_cohesion+
+
+          colcon test \
+            --packages-skip kalman_filter \
+            --packages-skip ros2_numpy \
+            --event-handlers console_cohesion+ \
+            --return-code-on-test-failure
+
+      - name: Show test results on failure
+        if: failure()
+        run: |
+          colcon test-result --all --verbose

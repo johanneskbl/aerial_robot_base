@@ -1,0 +1,69 @@
+# .clang-format
+Language: Cpp
+BasedOnStyle: Google
+
+AccessModifierOffset: -2                              # Indent offset for public/protected/private labels
+AlignEscapedNewlinesLeft: false                       # Left-align escaped newlines in strings
+AlignOperands: true                                   # Align operators if they do wrap
+AlignTrailingComments: true                           # Align trailing // or # comments vertically
+AllowAllParametersOfDeclarationOnNextLine: false      # Always insert a line break for each parameter
+AllowShortFunctionsOnASingleLine: All                 # Collapse function bodies to a single line if possible
+AllowShortIfStatementsOnASingleLine: true             # Collapse if-bodies for short if statements
+AllowShortLambdasOnASingleLine: All                   # Collapse lambda bodies to a single lime if possible
+AllowShortLoopsOnASingleLine: true                    # Collapse loop-bodies for short loops
+AlwaysBreakTemplateDeclarations: No                   # Force template declarations to break onto new lines
+AlwaysBreakBeforeMultilineStrings: true               # Break before multi-line string literals
+BinPackParameters: true                               # Pack parameters/arguments when they fit
+BreakBeforeBinaryOperators: false                     # Prefer breaking before operators
+BreakBeforeBraces: Custom                             # Use custom brace wrapping rules (see BraceWrapping)
+BreakBeforeTernaryOperators: false                    # Prefer breaking before ?: operators
+BreakConstructorInitializersBeforeComma: false        # Prefer breaking ctor initializer list before commas
+ColumnLimit: 120                                      # Maximum line length
+ConstructorInitializerAllOnOneLineOrOnePerLine: true  # Either one-line init list or one-per-line
+ConstructorInitializerIndentWidth: 2                  # Indent width for constructor initializer lists
+ContinuationIndentWidth: 4                            # Indent width for wrapped lines
+Cpp11BracedListStyle: false                           # Force C++11 braced-list formatting style
+DerivePointerBinding: false                           # Auto-derive pointer/reference binding style
+ExperimentalAutoDetectBinPacking: false               # Experimental bin-packing auto-detection
+FixNamespaceComments: false                           # Add a namespace identifier at the end of the block
+IndentCaseLabels: true                                # Indent case/default labels within switch
+IndentFunctionDeclarationAfterType: false             # Indent function name after return type
+IndentWidth: 2                                        # Indent size for each block
+MaxEmptyLinesToKeep: 2                                # Collapse multiple blank lines
+NamespaceIndentation: None                            # Indent code inside namespaces (to avoid excessive indent we disable it)
+ObjCSpaceBeforeProtocolList: true                     # Space before Objective-C protocol lists
+PenaltyBreakAssignment: 200                           # Cost of breaking around an assignment operator
+PenaltyBreakBeforeFirstCallParameter: 19              # Cost of breaking before first call parameter
+PenaltyBreakComment: 20                               # Cost of breaking comments
+PenaltyBreakTemplateDeclaration: 100                  # Cost of breaking before template declarations
+PenaltyBreakFirstLessLess: 0                          # Cost of breaking << chains early
+PenaltyBreakString: 1000000                           # Cost of breaking string literals
+PenaltyExcessCharacter: 1000                          # Cost of exceeding ColumnLimit
+PenaltyReturnTypeOnItsOwnLine: 1000                   # Cost of placing return type on its own line
+PointerBindsToType: false                             # Bind * and & to the type (e.g., int* p) OR to the variable (e.g., int *p)
+SortIncludes: false                                   # Reorder #include directives
+SpaceAfterCStyleCast: false                           # Insert space after C-style casts: (T)x
+SpaceAfterControlStatementKeyword: true               # Insert space after if/for/while keywords
+SpaceBeforeAssignmentOperators: true                  # Insert spaces around assignment operators
+SpaceInEmptyParentheses: false                        # Insert space in empty parens: f()
+SpacesBeforeTrailingComments: 2                       # Insert spaces before trailing comments
+SpacesInAngles: false                                 # Insert spaces inside <...> template brackets
+SpacesInCStyleCastParentheses: false                  # Insert spaces inside C-style cast parens
+SpacesInParentheses: false                            # Insert spaces inside ( ... )
+Standard: Auto                                        # Choose formatting rules based on detected language
+TabWidth: 2                                           # Visual width of a tab character
+UseTab: Never                                         # Insert literal tab characters
+
+
+BraceWrapping:                                        # Fine-grained brace placement rules
+  AfterClass: true                                    # Put class opening brace on new line
+  AfterControlStatement: 'true'                       # Put control-statement brace on new line
+  AfterEnum: true                                     # Put enum opening brace on new line
+  AfterFunction: true                                 # Put function opening brace on new line
+  AfterNamespace: true                                # Put namespace opening brace on new line
+  AfterStruct: true                                   # Put struct opening brace on new line
+  AfterUnion: true                                    # Put union opening brace on new line
+  BeforeCatch: true                                   # Put catch on new line (after } )
+  BeforeElse: true                                    # Put else on new line (after } )
+  BeforeLambdaBody: true                              # Put lambda opening brace on new line
+  IndentBraces: false                                 # Indent the braces themselves

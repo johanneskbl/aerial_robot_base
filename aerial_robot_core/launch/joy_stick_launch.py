@@ -1,27 +1,57 @@
-import launch
+#!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-def generate_launch_description():
-    robot_name = LaunchConfiguration('robot_name')
+# ---------------------------------------------------------------------------
+# Argument declarations  (name, default, description, (optional) choices)
+# ---------------------------------------------------------------------------
+_ARGS = [
+    ("robot_ns", "/", "Namespace for all robot nodes"),
+]
 
-    return LaunchDescription([
+
+def generate_launch_description():
+    # ------------------------------------------------------------------
+    # 1.  Declare CLI-overridable arguments
+    # ------------------------------------------------------------------
+    declared_args = [
         DeclareLaunchArgument(
-            'robot_name',
-            default_value='/',
-            description='Namespace for the robot'
-        ),
-        Node(
-            package='joy',
-            executable='joy_node',
-            name='joy_node',
-            namespace=robot_name,
-            output='screen',
-            parameters=[{
-                'dev': '/dev/input/js0',
-                'coalesce_interval': 0.025,
-            }]
+            name, default_value=default_value, description=description, **({"choices": choices[0]} if choices else {})
         )
-    ])
+        for name, default_value, description, *choices in _ARGS
+    ]
+
+    # Resolve / Read at launch time (NOT AT IMPORT TIME)
+    robot_ns = LaunchConfiguration("robot_ns")
+
+    # ------------------------------------------------------------------
+    # 2.  Nodes
+    # ------------------------------------------------------------------
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
+        namespace=robot_ns,
+        output="screen",
+        parameters=[
+            {
+                "dev": "/dev/input/js0",
+                "coalesce_interval": 0.025,
+            }
+        ],
+    )
+
+    # ------------------------------------------------------------------
+    # 3.  Assemble LaunchDescription
+    # ------------------------------------------------------------------
+    ld = LaunchDescription()
+
+    for arg in declared_args:
+        ld.add_action(arg)
+
+    ld.add_action(joy_node)
+    return ld

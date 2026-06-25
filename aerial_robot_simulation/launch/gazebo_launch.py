@@ -1,117 +1,143 @@
+#!/usr/bin/env python3
 import os
 from launch import LaunchDescription
-from launch.conditions import IfCondition
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable, IncludeLaunchDescription, RegisterEventHandler, Shutdown
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, EnvironmentVariable, TextSubstitution, PythonExpression
-from launch_ros.substitutions import FindPackageShare, FindPackagePrefix
-from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue, ParameterFile
-from ament_index_python.packages import get_package_share_directory
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    SetEnvironmentVariable,
+    RegisterEventHandler,
+    Shutdown
+)
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+    TextSubstitution,
+    EnvironmentVariable,
+)
+from launch.conditions import UnlessCondition
 from launch.event_handlers import OnProcessExit
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackagePrefix
+from ament_index_python.packages import get_package_share_directory
+
+# ---------------------------------------------------------------------------
+# Argument declarations  (name, default, description, (optional) choices)
+# ---------------------------------------------------------------------------
+pkg_share   = get_package_share_directory("aerial_robot_simulation")
+default_world = os.path.join(pkg_share, "gazebo_model", "world", "empty.world")
+_ARGS = [
+    ("robot_ns",       "hydrus",      "Namespace for all robot nodes"),
+    ("world_sdf_file", default_world, "Ignition world SDF file path (default: empty world included in this package)"),
+    ("headless",       "true",        "Run without GUI", ["true", "false"]),
+    ("sim_param_path", "",            "Path to YAML file with simulation parameters"),
+    ("spawn_x",        "0.0",         "Gazebo spawn X position [m] (sim only)"),
+    ("spawn_y",        "0.0",         "Gazebo spawn Y position [m] (sim only)"),
+    ("spawn_z",        "0.5",         "Gazebo spawn Z position [m] (sim only)"),
+]
 
 def generate_launch_description():
+    # ------------------------------------------------------------------
+    # 1.  Declare CLI-overridable arguments
+    # ------------------------------------------------------------------
+    declared_args = [
+        DeclareLaunchArgument(
+            name,
+            default_value=default_value,
+            description=description,
+            **({"choices": choices[0]} if choices else {})
+        )
+        for name, default_value, description, *choices in _ARGS
+    ]
 
-    # --- Load directory path ---
-    pkg_share   = get_package_share_directory('aerial_robot_simulation')
-    default_world = os.path.join(pkg_share, 'gazebo_model', 'world', 'empty.world')
-
-    # --- LaunchConfiguration ---
-    world        = LaunchConfiguration('world_sdf_file')
-    robot_name   = LaunchConfiguration('robot_name')
-    spawn_x = LaunchConfiguration('spawn_x')
-    spawn_y = LaunchConfiguration('spawn_y')
-    spawn_z = LaunchConfiguration('spawn_z')
-    sim_param_file = LaunchConfiguration('sim_param_file')
-    headless = LaunchConfiguration('headless')
-
-    # --- DeclareLaunchArgument ---
-    world_arg = DeclareLaunchArgument(
-        'world_sdf_file',
-        default_value=default_world,
-        description='Ignition world file'
-    )
-    robot_name_arg = DeclareLaunchArgument(
-        'robot_name',
-        default_value='',
-        description='Entity name for spawn'
-    )
-    spawn_x_arg = DeclareLaunchArgument(
-        'spawn_x',
-        default_value='0.0',
-        description='Initial X position'
-    )
-    spawn_y_arg = DeclareLaunchArgument(
-        'spawn_y',
-        default_value='0.0',
-        description='Initial Y position'
-    )
-    spawn_z_arg = DeclareLaunchArgument(
-        'spawn_z',
-        default_value='0.5',
-        description='Initial Z position'
-    )
-    sim_param_file_arg = DeclareLaunchArgument(
-        'sim_param_file',
-        default_value='',
-        description='Path to the simulation parameter YAML file'
-    )
-
-    headless_arg = DeclareLaunchArgument(
-        'headless',
-        default_value='False',
-        description='Run without GUI (headless mode)'
-    )
+    # Resolve / Read at launch time (NOT AT IMPORT TIME)
+    robot_ns       = LaunchConfiguration("robot_ns")
+    world          = LaunchConfiguration("world_sdf_file")
+    headless       = LaunchConfiguration("headless")
+    sim_param_path = LaunchConfiguration("sim_param_path")
+    spawn_x        = LaunchConfiguration("spawn_x")
+    spawn_y        = LaunchConfiguration("spawn_y")
+    spawn_z        = LaunchConfiguration("spawn_z")
     
-    # --- environmental setting ---
-    robot_prefix = FindPackagePrefix(robot_name)
-    robot_share_dir = PathJoinSubstitution([robot_prefix, 'share'])
+    # ------------------------------------------------------------------
+    # 2.  Derived paths & environment variables
+    # ------------------------------------------------------------------    
+    robot_share_dir = PathJoinSubstitution([FindPackagePrefix(robot_ns), "share"])
+
+    # Pass through DISPLAY env var for Gazebo GUI (if not headless)
     set_env = SetEnvironmentVariable(
-        'DISPLAY', os.environ.get('DISPLAY','')
+        name="DISPLAY",
+        value=os.environ.get("DISPLAY","")
+    )
+    set_xauthority = SetEnvironmentVariable(
+        name="XAUTHORITY",
+        value=os.environ.get("XAUTHORITY", os.path.expanduser("~/.Xauthority"))
     )
 
-    set_ign_resource_path = SetEnvironmentVariable(
-        name='GZ_SIM_RESOURCE_PATH',
+    # Gazebo looks for models, worlds, and plugins in GZ_SIM_RESOURCE_PATH
+    set_gazebo_resource_path = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH",
         value=[
-            EnvironmentVariable('GZ_SIM_RESOURCE_PATH', default_value=''),
-            TextSubstitution(text=':'),
+            EnvironmentVariable("GZ_SIM_RESOURCE_PATH", default_value=""),
+            TextSubstitution(text=":"),
             robot_share_dir
         ]
     )
 
-    set_ign_default_path = SetEnvironmentVariable(
-        name='GZ_SIM_SYSTEM_PLUGIN_PATH',
+    set_gazebo_default_path = SetEnvironmentVariable(
+        name="GZ_SIM_SYSTEM_PLUGIN_PATH",
         value=[
-            TextSubstitution(text='/opt/ros/humble/lib'),
+            TextSubstitution(text="/opt/ros/humble/lib"),
             TextSubstitution(text=os.pathsep),
-            EnvironmentVariable('GZ_SIM_SYSTEM_PLUGIN_PATH', default_value=''),
+            EnvironmentVariable("GZ_SIM_SYSTEM_PLUGIN_PATH", default_value=""),
+        ]
+    )
+
+    # Fortress (`ign gazebo`) uses IGN_GAZEBO_* env vars
+    set_ignition_resource_path = SetEnvironmentVariable(
+        name="IGN_GAZEBO_RESOURCE_PATH",
+        value=[
+            EnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", default_value=""),
+            TextSubstitution(text=":"),
+            robot_share_dir,
+        ]
+    )
+
+    set_ignition_default_path = SetEnvironmentVariable(
+        name="IGN_GAZEBO_SYSTEM_PLUGIN_PATH",
+        value=[
+            TextSubstitution(text="/opt/ros/humble/lib"),
+            TextSubstitution(text=os.pathsep),
+            EnvironmentVariable("IGN_GAZEBO_SYSTEM_PLUGIN_PATH", default_value=""),
         ]
     )
 
     set_fastrtps_profile = SetEnvironmentVariable(
-        'FASTRTPS_DEFAULT_PROFILES_FILE',
-        os.path.join(pkg_share, 'config', 'fastrtps_profiles.xml')
+        name="FASTRTPS_DEFAULT_PROFILES_FILE",
+        value=os.path.join(pkg_share, "config", "fastrtps_profiles.xml")
     )
 
-    # --- Gazebo ---
+    # ------------------------------------------------------------------
+    # 3.  Execute Gazebo processes
+    # ------------------------------------------------------------------ 
     ign_server = ExecuteProcess(
         cmd=[
-            'ign', 'gazebo',
-            '-r',                     
-            '-s', 'libgazebo_ros_factory.so',
-            '-s', 'libgazebo_ros_init.so',
+            "ign", "gazebo",
+            "-r",                     
+            "-s", "libgazebo_ros_factory.so",
+            "-s", "libgazebo_ros_init.so",
             world
         ],
-        output='screen',
+        output="screen"
     )
 
     ign_client = ExecuteProcess(
         cmd=[
-            'ign', 'gazebo',
-            '-g',
+            "ign", "gazebo",
+            "-g",
         ],
-        condition=IfCondition(PythonExpression(
-            ['not ', headless])),        
-        output='screen',
+        condition=UnlessCondition(headless),
+        output="screen"
     )
 
     shutdown_handler = RegisterEventHandler(
@@ -121,77 +147,85 @@ def generate_launch_description():
         )
     )
 
-    # --- Nodes ---
+    # ------------------------------------------------------------------
+    # 3.  Nodes
+    # ------------------------------------------------------------------
     sim_param_server = Node(
-        package='aerial_robot_simulation',
-        executable='sim_param_server',
-        name='sim_param_server',
-        namespace= robot_name,
-        parameters=[sim_param_file,
-        ],
+        package="aerial_robot_simulation",
+        executable="sim_param_server",
+        name="sim_param_server",
+        namespace= robot_ns,
+        parameters=[
+            sim_param_path
+        ]
     )
 
     clock_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
         arguments=[
-            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'
+            "/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"
         ],
-        output='screen'
+        output="screen"
     )
     
     spawn_robot = Node(
-        package='ros_gz_sim',
-        executable='create',
+        package="ros_gz_sim",
+        executable="create",
         arguments=[
-            '-name',  robot_name,
-            '-topic', PythonExpression(["'/' + '", robot_name, "' + '/robot_description'"]),
-            '-x', spawn_x,
-            '-y', spawn_y,
-            '-z', spawn_z,
+            "-name", robot_ns,
+            "-topic", PythonExpression(["'/' + '", robot_ns, "' + '/robot_description'"]),
+            "-x", spawn_x,
+            "-y", spawn_y,
+            "-z", spawn_z,
         ],
-        output='screen',
+        output="screen"
     )
 
     att_controller_spawner = Node(
-        namespace= robot_name,
-        package='controller_manager',
-        executable='spawner',
-        name='spawn_att_controller',
-        output='screen',
+        namespace=robot_ns,
+        package="controller_manager",
+        executable="spawner",
+        name="spawn_att_controller",
+        output="screen",
         arguments=[
-            'attitude_controller',
-            '--param-file', sim_param_file
+            "attitude_controller",
+            "--param-file", sim_param_path
         ],
-        parameters=[{'use_sim_time': True}]
+        parameters=[
+            {"use_sim_time": True}
+        ]
     )
 
     joint_state_broadcaster_spawner = Node(
-        namespace= robot_name,
-        package='controller_manager',
-        executable='spawner',
-        arguments=['joint_state_broadcaster'],
-        parameters=[{'use_sim_time': True}],
+        namespace=robot_ns,
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster"],
+        parameters=[
+            {"use_sim_time": True}
+        ]
     )
 
     ld = LaunchDescription()
-    ld.add_action(world_arg)
-    ld.add_action(robot_name_arg)
-    ld.add_action(spawn_x_arg)
-    ld.add_action(spawn_y_arg)
-    ld.add_action(spawn_z_arg)
-    ld.add_action(sim_param_file_arg)
-    ld.add_action(set_fastrtps_profile)
+    
+    for arg in declared_args:
+        ld.add_action(arg)
+
     ld.add_action(set_env)
-    ld.add_action(set_ign_resource_path)
-    ld.add_action(set_ign_default_path)
+    ld.add_action(set_xauthority)
+    ld.add_action(set_gazebo_resource_path)
+    ld.add_action(set_gazebo_default_path)
+    ld.add_action(set_ignition_resource_path)
+    ld.add_action(set_ignition_default_path)
+    ld.add_action(set_fastrtps_profile)
+    ld.add_action(shutdown_handler)
     ld.add_action(sim_param_server)
     ld.add_action(ign_server)
-    ld.add_action(shutdown_handler)
     ld.add_action(ign_client)
     ld.add_action(clock_bridge)
     ld.add_action(spawn_robot)
-    ld.add_action(joint_state_broadcaster_spawner)
     ld.add_action(att_controller_spawner)
+    ld.add_action(joint_state_broadcaster_spawner)
 
     return ld

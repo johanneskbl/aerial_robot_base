@@ -1,38 +1,37 @@
 // -*- mode: c++ -*-
-/*********************************************************************
- * Software License Agreement (BSD License)
+/*
+ * Software License Agreement (BSD-3 License)
  *
- *  Copyright (c) 2025, DRAGON Laboratory, The University of Tokyo
- *  All rights reserved.
+ * Copyright (c) 2026, DRAGON Laboratory, The University of Tokyo
+ * All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/o2r other materials provided
- *     with the distribution.
- *   * Neither the name of the JSK Lab nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *   2. Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer in the documentation and/or other materials provided
+ *      with the distribution.
+ *   3. Neither the name of the DRAGON Laboratory nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef SERVO_BRIDGE_H_
 #define SERVO_BRIDGE_H_
 
@@ -46,43 +45,52 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <spinal/msg/joint_profiles.hpp>
-#include <spinal/msg/servo_control_cmd.hpp>
-#include <spinal/msg/servo_states.hpp>
-#include <spinal/msg/servo_torque_cmd.hpp>
-#include <spinal/msg/uav_info.hpp>
+#include <spinal_msgs/msg/joint_profiles.hpp>
+#include <spinal_msgs/msg/servo_control_cmd.hpp>
+#include <spinal_msgs/msg/servo_states.hpp>
+#include <spinal_msgs/msg/servo_torque_cmd.hpp>
+#include <spinal_msgs/msg/uav_info.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <string>
 #include <vector>
 
-namespace ValueType {
-enum : int { BIT = 0, RADIAN = 1 };
+namespace ValueType
+{
+enum : int
+{
+  BIT = 0,
+  RADIAN = 1
+};
 }
 
-class SingleServoHandle {
- public:
-  SingleServoHandle(const std::string& name, int id, int angle_sgn, double zero_point_offset, double angle_scale,
+class SingleServoHandle
+{
+public:
+  SingleServoHandle(const std::string &name, int id, int angle_sgn, double zero_point_offset, double angle_scale,
                     double upper_limit, double lower_limit, double torque_scale, bool receive_real_state,
                     bool filter_flag = false, double sample_freq = 0.0, double cutoff_freq = 0.0)
-      : name_(name),
-        id_(id),
-        curr_angle_val_(0.0),
-        target_angle_val_(0.0),
-        init_target_angle_val_(false),
-        curr_torque_val_(0.0),
-        target_torque_val_(0.0),
-        angle_sgn_(angle_sgn),
-        zero_point_offset_(zero_point_offset),
-        angle_scale_(angle_scale),
-        upper_limit_(upper_limit),
-        lower_limit_(lower_limit),
-        torque_scale_(torque_scale),
-        receive_real_state_(receive_real_state),
-        filter_flag_(filter_flag) {
-    if (filter_flag_) {
-      if (sample_freq <= 0.0 || cutoff_freq <= 0.0) {
+    : name_(name),
+      id_(id),
+      curr_angle_val_(0.0),
+      target_angle_val_(0.0),
+      init_target_angle_val_(false),
+      curr_torque_val_(0.0),
+      target_torque_val_(0.0),
+      angle_sgn_(angle_sgn),
+      zero_point_offset_(zero_point_offset),
+      angle_scale_(angle_scale),
+      upper_limit_(upper_limit),
+      lower_limit_(lower_limit),
+      torque_scale_(torque_scale),
+      receive_real_state_(receive_real_state),
+      filter_flag_(filter_flag)
+  {
+    if (filter_flag_)
+    {
+      if (sample_freq <= 0.0 || cutoff_freq <= 0.0)
+      {
         throw std::runtime_error("filtering config is invalid");
       }
       lpf_angle_ = IirFilter(sample_freq, cutoff_freq, 1);
@@ -93,47 +101,62 @@ class SingleServoHandle {
 
   using Ptr = std::shared_ptr<SingleServoHandle>;
 
-  inline void setCurrAngleVal(const double& val, int value_type) {
-    if (value_type == ValueType::BIT) {
+  inline void setCurrAngleVal(const double &val, int value_type)
+  {
+    if (value_type == ValueType::BIT)
+    {
       curr_angle_val_ = angle_scale_ * angle_sgn_ * (val - zero_point_offset_);
-    } else {
+    }
+    else
+    {
       curr_angle_val_ = val;
     }
-    if (filter_flag_) {
+    if (filter_flag_)
+    {
       curr_angle_val_ = lpf_angle_.filterFunction(curr_angle_val_);
     }
-    if (!init_target_angle_val_) {
+    if (!init_target_angle_val_)
+    {
       target_angle_val_ = std::clamp(curr_angle_val_, lower_limit_, upper_limit_);
       init_target_angle_val_ = true;
     }
   }
 
-  inline void setTargetAngleVal(const double& val, int value_type) {
-    if (value_type == ValueType::BIT) {
-      target_angle_val_ =
-          std::clamp(angle_scale_ * angle_sgn_ * (val - zero_point_offset_), lower_limit_, upper_limit_);
-    } else {
+  inline void setTargetAngleVal(const double &val, int value_type)
+  {
+    if (value_type == ValueType::BIT)
+    {
+      target_angle_val_ = std::clamp(angle_scale_ * angle_sgn_ * (val - zero_point_offset_), lower_limit_,
+                                     upper_limit_);
+    }
+    else
+    {
       target_angle_val_ = std::clamp(val, lower_limit_, upper_limit_);
     }
-    if (!receive_real_state_) {
+    if (!receive_real_state_)
+    {
       curr_angle_val_ = target_angle_val_;
     }
   }
 
-  inline void setCurrTorqueVal(const double& val) { curr_torque_val_ = torque_scale_ * angle_sgn_ * val; }
+  inline void setCurrTorqueVal(const double &val) { curr_torque_val_ = torque_scale_ * angle_sgn_ * val; }
 
-  inline void setTargetTorqueVal(const double& val) { target_torque_val_ = val; }
+  inline void setTargetTorqueVal(const double &val) { target_torque_val_ = val; }
 
-  inline double getCurrAngleVal(int value_type) const {
-    if (value_type == ValueType::BIT) {
+  inline double getCurrAngleVal(int value_type) const
+  {
+    if (value_type == ValueType::BIT)
+    {
       return std::clamp((curr_angle_val_ * angle_sgn_ / angle_scale_) + zero_point_offset_,
                         static_cast<double>(INT16_MIN) / 2.0, static_cast<double>(INT16_MAX) / 2.0);
     }
     return curr_angle_val_;
   }
 
-  inline double getTargetAngleVal(int value_type) const {
-    if (value_type == ValueType::BIT) {
+  inline double getTargetAngleVal(int value_type) const
+  {
+    if (value_type == ValueType::BIT)
+    {
       return std::clamp((target_angle_val_ * angle_sgn_ / angle_scale_) + zero_point_offset_,
                         static_cast<double>(INT16_MIN) / 2.0, static_cast<double>(INT16_MAX) / 2.0);
     }
@@ -142,21 +165,23 @@ class SingleServoHandle {
 
   inline double getCurrTorqueVal() const { return curr_torque_val_; }
 
-  inline double getTargetTorqueVal(int value_type) const {
-    if (value_type == ValueType::BIT) {
+  inline double getTargetTorqueVal(int value_type) const
+  {
+    if (value_type == ValueType::BIT)
+    {
       return (target_torque_val_ * angle_sgn_ / torque_scale_);
     }
     return target_torque_val_;
   }
 
-  inline const std::string& getName() const { return name_; }
-  inline const int& getId() const { return id_; }
-  inline const int& getAngleSgn() const { return angle_sgn_; }
-  inline const int& getZeroPointOffset() const { return zero_point_offset_; }
-  inline const double& getAngleScale() const { return angle_scale_; }
-  inline const double& getTorqueScale() const { return torque_scale_; }
+  inline const std::string &getName() const { return name_; }
+  inline const int &getId() const { return id_; }
+  inline const int &getAngleSgn() const { return angle_sgn_; }
+  inline const int &getZeroPointOffset() const { return zero_point_offset_; }
+  inline const double &getAngleScale() const { return angle_scale_; }
+  inline const double &getTorqueScale() const { return torque_scale_; }
 
- private:
+private:
   int id_;
   std::string name_;
   double curr_angle_val_, target_angle_val_;
@@ -170,55 +195,56 @@ class SingleServoHandle {
 using SingleServoHandlePtr = SingleServoHandle::Ptr;
 using ServoGroupHandler = std::vector<SingleServoHandlePtr>;
 
-class ServoBridge {
- public:
+class ServoBridge
+{
+public:
   explicit ServoBridge(rclcpp::Node::SharedPtr node);
   ~ServoBridge() = default;
 
   /// Publish combined joint_states (non-simulation)
   void servoStatePublish();
 
- private:
-  // callbacks
-  void servoStatesCallback(spinal::msg::ServoStates::ConstSharedPtr msg, const std::string& servo_group_name);
+private:
+  // Callbacks
+  void servoStatesCallback(spinal_msgs::msg::ServoStates::ConstSharedPtr msg, const std::string &servo_group_name);
 
-  void servoCtrlCallback(sensor_msgs::msg::JointState::ConstSharedPtr msg, const std::string& servo_group_name);
+  void servoCtrlCallback(sensor_msgs::msg::JointState::ConstSharedPtr msg, const std::string &servo_group_name);
 
-  void servoTorqueCtrlCallback(sensor_msgs::msg::JointState::ConstSharedPtr msg, const std::string& servo_group_name);
+  void servoTorqueCtrlCallback(sensor_msgs::msg::JointState::ConstSharedPtr msg, const std::string &servo_group_name);
 
   void servoEnableCallback(std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-                           std::shared_ptr<std_srvs::srv::SetBool::Response> res, const std::string& servo_group_name);
+                           std::shared_ptr<std_srvs::srv::SetBool::Response> res, const std::string &servo_group_name);
 
-  void uavInfoCallback(spinal::msg::UavInfo::ConstSharedPtr msg);
+  void uavInfoCallback(spinal_msgs::msg::UavInfo::ConstSharedPtr msg);
 
-  // node handle
+  // Node handle
   rclcpp::Node::SharedPtr node_;
 
-  // publishers & subscribers
+  // Publishers & subscribers
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr servo_states_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr mujoco_control_input_pub_;
-  rclcpp::Publisher<spinal::msg::JointProfiles>::SharedPtr joint_profile_pub_;
+  rclcpp::Publisher<spinal_msgs::msg::JointProfiles>::SharedPtr joint_profile_pub_;
 
-  rclcpp::Subscription<spinal::msg::UavInfo>::SharedPtr uav_info_sub_;
+  rclcpp::Subscription<spinal_msgs::msg::UavInfo>::SharedPtr uav_info_sub_;
 
-  std::map<std::string, rclcpp::Subscription<spinal::msg::ServoStates>::SharedPtr> servo_states_subs_;
+  std::map<std::string, rclcpp::Subscription<spinal_msgs::msg::ServoStates>::SharedPtr> servo_states_subs_;
   std::map<std::string, rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr> servo_ctrl_subs_;
   std::map<std::string, rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr> servo_torque_ctrl_subs_;
 
   std::map<std::string, rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr> servo_enable_srvs_;
 
-  std::map<std::string, rclcpp::Publisher<spinal::msg::ServoControlCmd>::SharedPtr> servo_target_pos_pubs_;
-  std::map<std::string, rclcpp::Publisher<spinal::msg::ServoControlCmd>::SharedPtr> servo_target_torque_pubs_;
-  std::map<std::string, rclcpp::Publisher<spinal::msg::ServoTorqueCmd>::SharedPtr> servo_enable_pubs_;
+  std::map<std::string, rclcpp::Publisher<spinal_msgs::msg::ServoControlCmd>::SharedPtr> servo_target_pos_pubs_;
+  std::map<std::string, rclcpp::Publisher<spinal_msgs::msg::ServoControlCmd>::SharedPtr> servo_target_torque_pubs_;
+  std::map<std::string, rclcpp::Publisher<spinal_msgs::msg::ServoTorqueCmd>::SharedPtr> servo_enable_pubs_;
 
-  // simulation-only: individual float64 command pubs
+  // Simulation-only: individual float64 command pubs
   std::map<std::string, rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr> servo_target_pos_sim_pubs_;
 
-  // servo handlers & flags
+  // Servo handlers & flags
   std::map<std::string, ServoGroupHandler> servos_handler_;
   std::map<std::string, bool> no_real_state_flags_;
 
-  // configuration
+  // Configuration
   bool simulation_mode_;
   bool use_mujoco_;
   double moving_check_rate_;

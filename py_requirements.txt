@@ -1,0 +1,35 @@
+# Building
+cmake==3.26.4
+vcstool==0.3.0
+colcon-common-extensions==0.3.0
+colcon-clean==0.2.1
+setuptools==68.1.0
+
+# Development
+ninja==1.13.0
+pyyaml==5.4.1
+numpy==1.24.4
+pandas==1.3.5
+scipy==1.15.3
+ipython==7.31.1
+transformations==2025.1.1
+matplotlib==3.5.1
+scienceplots==2.1.1
+tikzplotlib==0.10.1
+
+# Optimal Control
+casadi==3.7.0
+pyquaternion==0.9.9
+
+# Machine Learning
+torch==2.6.0
+torchsummary==1.5.1
+scikit-build==0.18.1
+scikit-learn==1.6.1
+cvxpy==1.7.2
+progress-table==3.1.2
+seaborn==0.13.2
+
+# Formatting
+pre_commit==4.6.0
+black==26.5.1

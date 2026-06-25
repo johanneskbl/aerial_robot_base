@@ -3,24 +3,40 @@
 <package format="3">
   <name>aerial_robot_estimation</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="chou@dragon.t.u-tokyo.ac.jp">chou</maintainer>
-  <license>BSD</license>
+  <description>ROS 2 package for aerial_robot_estimation</description>
+  <maintainer email="chou@dragon.t.u-tokyo.ac.jp">Bakui Chou</maintainer>
+  <license>BSD-3-Clause</license>
+  <author email="chou@dragon.t.u-tokyo.ac.jp">Bakui Chou</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- ROS 2 dependencies -->
+  <depend>rclcpp</depend>
+  <depend>pluginlib</depend>
+  <depend>tf2_eigen_kdl</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>geographic_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>geodesy</depend>
+
+  <!-- Kalman filter dependency -->
+  <depend>kalman_filter</depend>
+
+  <!-- Aerial robot dependencies -->
   <depend>aerial_robot_model</depend>
   <depend>aerial_robot_msgs</depend>
-  <depend>geodesy</depend>
-  <depend>geographic_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>kalman_filter</depend>
-  <depend>nav_msgs</depend>
-  <depend>pluginlib</depend>
-  <depend>rclcpp</depend>
-  <depend>sensor_msgs</depend>
   <depend>spinal</depend>
-  <depend>tf2_eigen_kdl</depend>
+  <depend>spinal_msgs</depend>
+
+  <!-- Linters -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

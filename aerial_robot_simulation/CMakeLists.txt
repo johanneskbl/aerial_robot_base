@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(aerial_robot_simulation)
 
-# C++17
+# --- C++17 ---
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -39,13 +39,13 @@ add_definitions(-DSIMULATION)
 
 include_directories(
   include
-  )
+)
 
-# rotor handle lib
+# Rotor handle lib
 add_library(rotor_handle_lib INTERFACE)
 target_include_directories(rotor_handle_lib INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  )
+)
 ament_target_dependencies(rotor_handle_lib INTERFACE
   rclcpp
   urdfdom_headers
@@ -54,14 +54,14 @@ ament_target_dependencies(rotor_handle_lib INTERFACE
   aerial_robot_model
 )
 
-# spinal interface
+# Spinal interface
 add_library(spinal_interface SHARED
   src/spinal_interface.cpp
 )
 
 target_include_directories(spinal_interface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  )
+)
 
 ament_target_dependencies(spinal_interface
   rclcpp
@@ -70,10 +70,10 @@ ament_target_dependencies(spinal_interface
   hardware_interface
   urdf
   spinal
-  )
+)
 target_link_libraries(spinal_interface
   rotor_handle_lib
-  )
+)
 
 add_library(aerial_robot_hw_sim SHARED
   src/aerial_robot_hw_sim.cpp)
@@ -87,17 +87,18 @@ ament_target_dependencies(aerial_robot_hw_sim
   ignition-math6
   gz_ros2_control
   ignition-gazebo6
-  )
+)
 target_link_libraries(aerial_robot_hw_sim
   spinal_interface
-  )
+)
 pluginlib_export_plugin_description_file(
     gz_ros2_control
     aerial_robot_hw_sim_plugins.xml
 )
 
 add_library(simulation_attitude_controller SHARED
-  src/simulation_attitude_controller.cpp)
+  src/simulation_attitude_controller.cpp
+)
 ament_target_dependencies(simulation_attitude_controller
   rclcpp
   rclcpp_lifecycle
@@ -108,26 +109,26 @@ ament_target_dependencies(simulation_attitude_controller
   gz_ros2_control
   ignition-gazebo6
   controller_interface
-  )
+)
 target_link_libraries(simulation_attitude_controller
   spinal_interface
-  )
+)
 
 add_executable(sim_param_server src/sim_param_server.cpp)
 ament_target_dependencies(sim_param_server
   rclcpp
-  )
+)
 
 
 pluginlib_export_plugin_description_file(
   gz_ros2_control
   aerial_robot_hw_sim_plugins.xml
-  )
+)
 
 pluginlib_export_plugin_description_file(
   controller_interface
   flight_controllers_plugins.xml
-  )
+)
 
 
 install(
@@ -141,12 +142,12 @@ install(
 install(
   DIRECTORY include/${PROJECT_NAME}/
   DESTINATION include/${PROJECT_NAME}
-  )
+)
 
 install(
   DIRECTORY launch xacro config gazebo_model
   DESTINATION share/${PROJECT_NAME}
-  )
+)
 
 install(
   FILES
@@ -156,5 +157,11 @@ install(
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# Linters
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()

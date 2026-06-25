@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>aerial_robot_navigation</name>
+  <version>0.0.0</version>
+  <description>ROS 2 package for aerial_robot_navigation</description>
+  <maintainer email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</maintainer>
+  <license>BSD-3-Clause</license>
+  <author email="johannes-kubel@dragon.t.u-tokyo.ac.jp">Johannes Kübel</author>
+
+  <!-- ROS 2 dependencies -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>geographic_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>geodesy</depend>
+
+  <!-- Aerial robot dependencies -->
+  <depend>aerial_robot_estimation</depend>
+  <depend>aerial_robot_msgs</depend>
+  <depend>spinal</depend>
+
+  <!-- Linters -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_cppcheck</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

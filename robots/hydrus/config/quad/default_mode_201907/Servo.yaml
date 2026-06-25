@@ -1,7 +1,6 @@
 /**/servo_bridge:
   ros__parameters:
     servo_controller:
-
       groups:
         - joints
 
@@ -25,7 +24,7 @@
         simulation:
           type: joint_group_position_controller
 
-# joints setting for simulation
+# Joints setting for simulation
 /**/joint_group_position_controller:
   ros__parameters:
     joints:
