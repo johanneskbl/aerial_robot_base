@@ -34,7 +34,7 @@ set(ROS_DEPENDENCIES
 )
 
 # --- Build flight_navigation library ---
-add_library (flight_navigation
+add_library(flight_navigation
   src/flight_navigation.cpp
   src/util/joy_parser.cpp
   src/trajectory/reference_base.cpp
@@ -49,6 +49,7 @@ add_library (flight_navigation
   src/trajectory/utils/logger.cpp
   src/trajectory/utils/timer.cpp
 )
+set_target_properties(flight_navigation PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 ament_target_dependencies(flight_navigation
   ${ROS_DEPENDENCIES}
